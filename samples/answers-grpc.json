@@ -12,6 +12,8 @@
     "features": ["open-telemetry", "helm"],
     "protocols": ["grpc"],
     "static_includes": [],
+    "frontend": "shadcn-admin-kit",
+    "frontend_protocol": "grpc-web",
     "entities": {
         "Profile": {
             "kind": "collectionType",

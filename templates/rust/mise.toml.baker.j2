@@ -8,7 +8,8 @@ rust = "latest"
 "cargo:cargo-nextest" = "latest"
 {{'protoc = "latest"' if 'grpc' in protocols }}
 {{'helm = "latest"' if  "helm" in features }}
-{{'node = "22"' if frontend == 'leptos' }}
+{{'node = "latest"' if frontend != 'none' }}
+{{'pnpm = "latest"' if frontend != 'none' }}
 {%- if frontend == 'leptos' %}
 "cargo:trunk" = "latest"
 {%- endif %}
@@ -33,7 +34,7 @@ sources = ['.baker/answers.json']
 [tasks.frontend-install]
 description = "Install Leptos frontend npm dependencies"
 dir = "frontend"
-run = "npm install"
+run = "pnpm install"
 
 [tasks.frontend-build]
 description = "Build Leptos frontend with Trunk"
@@ -47,23 +48,31 @@ description = "Run Leptos frontend dev server"
 dir = "frontend"
 run = "trunk serve --open"
 depends = ["frontend-install"]
-{% elif frontend != "none" %}
+{% elif frontend != "none" and frontend != "leptos" %}
 [tasks.frontend-install]
 description = "Install frontend npm dependencies"
 dir = "frontend"
-run = "npm install"
+run = "pnpm install"
 
 [tasks.frontend-dev]
 description = "Run frontend dev server"
 dir = "frontend"
-run = "npm run dev"
+run = "pnpm run dev"
 depends = ["frontend-install"]
+
+{% if frontend_protocol == 'grpc-web' %}
+[tasks.frontend-proto-gen]
+description = "Generate protobuf TypeScript bindings"
+dir = "frontend"
+run = "pnpm run proto:gen"
+depends = ["frontend-install"]
+{% endif %}
 
 [tasks.frontend-build]
 description = "Build frontend"
 dir = "frontend"
-run = "npm run build"
-depends = ["frontend-install"]
+run = "pnpm run build"
+depends = [{% if frontend_protocol == 'grpc-web' %}"frontend-proto-gen"{% else %}"frontend-install"{% endif %}]
 {% endif %}
 
 [tasks.build]
@@ -73,7 +82,7 @@ run = "cargo build --release"
 
 [tasks.test]
 description = "Run tests"
-run = "cargo nextest run --all --test-threads 4"
+run = "cargo nextest run --all --test-threads 4 --no-tests=pass"
 
 [tasks.test-coverage]
 description = "Run tests for coverage report"

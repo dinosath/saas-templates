@@ -32,13 +32,13 @@
 {%- macro total_field(ev) -%}
 {%- set m = namespace(f='') -%}
 {%- for fn, fp in ev.attributes | items -%}
-{%- if not m.f and ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) and ('total' in (fn | lower) or 'amount_total' in (fn | snake_case) or 'total_amount' in (fn | snake_case)) -%}
+{%- if not m.f and fp.type == 'number' and ('total' in (fn | lower) or 'amount_total' in (fn | snake_case) or 'total_amount' in (fn | snake_case)) -%}
 {%- set m.f = fn | snake_case -%}
 {%- endif -%}
 {%- endfor -%}
 {%- if not m.f -%}
 {%- for fn, fp in ev.attributes | items -%}
-{%- if not m.f and ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) and ('amount' in (fn | lower) or 'net' in (fn | lower)) -%}
+{%- if not m.f and fp.type == 'number' and ('amount' in (fn | lower) or 'net' in (fn | lower)) -%}
 {%- set m.f = fn | snake_case -%}
 {%- endif -%}
 {%- endfor -%}
@@ -50,7 +50,7 @@
 {%- macro net_field(ev) -%}
 {%- set m = namespace(f='') -%}
 {%- for fn, fp in ev.attributes | items -%}
-{%- if not m.f and ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) and ('net' in (fn | lower) or 'subtotal' in (fn | lower)) -%}
+{%- if not m.f and fp.type == 'number' and ('net' in (fn | lower) or 'subtotal' in (fn | lower)) -%}
 {%- set m.f = fn | snake_case -%}
 {%- endif -%}
 {%- endfor -%}
@@ -61,7 +61,7 @@
 {%- macro vat_field(ev) -%}
 {%- set m = namespace(f='') -%}
 {%- for fn, fp in ev.attributes | items -%}
-{%- if not m.f and ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) and ('vat' in (fn | lower) or 'tax' in (fn | lower) or 'duty' in (fn | lower)) -%}
+{%- if not m.f and fp.type == 'number' and ('vat' in (fn | lower) or 'tax' in (fn | lower) or 'duty' in (fn | lower)) -%}
 {%- set m.f = fn | snake_case -%}
 {%- endif -%}
 {%- endfor -%}
@@ -72,7 +72,7 @@
 {%- macro qty_field(ev) -%}
 {%- set m = namespace(f='') -%}
 {%- for fn, fp in ev.attributes | items -%}
-{%- if not m.f and 'quantity' in (fn | lower) and ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) -%}
+{%- if not m.f and 'quantity' in (fn | lower) and fp.type == 'number' -%}
 {%- set m.f = fn | snake_case -%}
 {%- endif -%}
 {%- endfor -%}
@@ -83,7 +83,7 @@
 {%- macro price_field(ev) -%}
 {%- set m = namespace(f='') -%}
 {%- for fn, fp in ev.attributes | items -%}
-{%- if not m.f and ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) and ('price' in (fn | lower) or 'unit' in (fn | lower)) -%}
+{%- if not m.f and fp.type == 'number' and ('price' in (fn | lower) or 'unit' in (fn | lower)) -%}
 {%- set m.f = fn | snake_case -%}
 {%- endif -%}
 {%- endfor -%}
@@ -150,7 +150,7 @@
 {%- endif -%}
 {%- elif fp.type == 'integer' -%}
             "{{ fn | snake_case }}": {{ fp.default | default(1) }},
-{%- elif ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) -%}
+{%- elif fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' -%}
             "{{ fn | snake_case }}": {{ fp.default | default(0.0) }},
 {%- elif fp.type == 'boolean' -%}
             "{{ fn | snake_case }}": {{ fp.default | default('true') | lower }},
@@ -168,8 +168,8 @@
 {% if ev.attributes -%}
 {% set scan = namespace(amount_count=0, has_qty=false, has_m2o=false, has_email=false, has_state=false) -%}
 {% for fn, fp in ev.attributes | items -%}
-{% if ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) and ('amount' in (fn | lower) or 'total' in (fn | lower) or 'net' in (fn | lower) or 'vat' in (fn | lower)) -%}{% set scan.amount_count = scan.amount_count + 1 -%}{% endif -%}
-{% if 'quantity' in (fn | lower) and ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) -%}{% set scan.has_qty = true -%}{% endif -%}
+{% if fp.type == 'number' and ('amount' in (fn | lower) or 'total' in (fn | lower) or 'net' in (fn | lower) or 'vat' in (fn | lower)) -%}{% set scan.amount_count = scan.amount_count + 1 -%}{% endif -%}
+{% if 'quantity' in (fn | lower) and fp.type == 'number' -%}{% set scan.has_qty = true -%}{% endif -%}
 {% if fp.type == 'relation' and fp.relation == 'manyToOne' -%}{% set scan.has_m2o = true -%}{% endif -%}
 {% if fp.type == 'string' and fp.format == 'email' -%}{% set scan.has_email = true -%}{% endif -%}
 {% if (fn | lower) in ['state', 'status'] and fp.enum -%}{% set scan.has_state = true -%}{% endif -%}

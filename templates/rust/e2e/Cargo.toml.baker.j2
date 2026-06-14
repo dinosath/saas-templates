@@ -17,6 +17,10 @@ log = "0.4"
 {% if 'grpc' in protocols %}
 grpc = "0.9"
 grpc-protobuf = "0.9"
+tonic = { version = "0.14", features = ["codegen"] }
+tonic-prost = "0.14"
+prost = "0.14"
+prost-types = "0.14"
 {% endif %}
 {% if frontend != 'none' %}
 playwright-rs = "0.8"
@@ -27,5 +31,5 @@ tokio-test = "0.4"
 {% if 'grpc' in protocols %}
 
 [build-dependencies]
-grpc-protobuf-build = "0.9"
+tonic-prost-build = "0.14"
 {% endif %}

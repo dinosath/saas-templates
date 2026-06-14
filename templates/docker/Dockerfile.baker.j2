@@ -1,6 +1,6 @@
 FROM lukemathwalker/cargo-chef:latest-rust-1-alpine3.21 AS chef
 WORKDIR /app
-RUN apk add --no-cache upx
+RUN apk add --no-cache upx{% if 'grpc' in protocols %} cmake make g++ musl-dev linux-headers{% endif %}
 
 FROM chef AS planner
 COPY . .

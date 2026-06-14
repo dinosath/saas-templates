@@ -1,0 +1,5 @@
+allowBuilds:
+  msw: true
+{%- if frontend_protocol | default('rest') == 'grpc-web' %}
+  '@bufbuild/buf': true
+{%- endif %}

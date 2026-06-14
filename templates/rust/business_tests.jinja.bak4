@@ -32,7 +32,7 @@
 {%- macro total_field(ev) -%}
 {%- set m = namespace(f='') -%}
 {%- for fn, fp in ev.attributes | items -%}
-{%- if not m.f and ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) and ('total' in (fn | lower) or 'amount_total' in (fn | snake_case) or 'total_amount' in (fn | snake_case)) -%}
+{%- if not m.f and fp.type == 'number' and ('total' in (fn | lower) or 'amount_total' in (fn | snake_case) or 'total_amount' in (fn | snake_case)) -%}
 {%- set m.f = fn | snake_case -%}
 {%- endif -%}
 {%- endfor -%}
@@ -50,7 +50,7 @@
 {%- macro net_field(ev) -%}
 {%- set m = namespace(f='') -%}
 {%- for fn, fp in ev.attributes | items -%}
-{%- if not m.f and ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) and ('net' in (fn | lower) or 'subtotal' in (fn | lower)) -%}
+{%- if not m.f and fp.type == 'number' and ('net' in (fn | lower) or 'subtotal' in (fn | lower)) -%}
 {%- set m.f = fn | snake_case -%}
 {%- endif -%}
 {%- endfor -%}
@@ -61,7 +61,7 @@
 {%- macro vat_field(ev) -%}
 {%- set m = namespace(f='') -%}
 {%- for fn, fp in ev.attributes | items -%}
-{%- if not m.f and ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) and ('vat' in (fn | lower) or 'tax' in (fn | lower) or 'duty' in (fn | lower)) -%}
+{%- if not m.f and fp.type == 'number' and ('vat' in (fn | lower) or 'tax' in (fn | lower) or 'duty' in (fn | lower)) -%}
 {%- set m.f = fn | snake_case -%}
 {%- endif -%}
 {%- endfor -%}
@@ -83,7 +83,7 @@
 {%- macro price_field(ev) -%}
 {%- set m = namespace(f='') -%}
 {%- for fn, fp in ev.attributes | items -%}
-{%- if not m.f and ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) and ('price' in (fn | lower) or 'unit' in (fn | lower)) -%}
+{%- if not m.f and fp.type == 'number' and ('price' in (fn | lower) or 'unit' in (fn | lower)) -%}
 {%- set m.f = fn | snake_case -%}
 {%- endif -%}
 {%- endfor -%}
@@ -150,7 +150,7 @@
 {%- endif -%}
 {%- elif fp.type == 'integer' -%}
             "{{ fn | snake_case }}": {{ fp.default | default(1) }},
-{%- elif ( fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' ) -%}
+{%- elif fp.type == 'number' or fp.type == 'decimal' or fp.type == 'float' -%}
             "{{ fn | snake_case }}": {{ fp.default | default(0.0) }},
 {%- elif fp.type == 'boolean' -%}
             "{{ fn | snake_case }}": {{ fp.default | default('true') | lower }},

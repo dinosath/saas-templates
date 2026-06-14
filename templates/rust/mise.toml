@@ -43,7 +43,7 @@ run = [{ task = "generate"},{ task = "e2e-frontend" }]
 [tasks.grpc]
 description = "Generate and build grpc sample"
 env.ANSWER = "grpc"
-run = [{ task = "generate"},{ task = "e2e" }]
+run = [{ task = "generate"},{ task = "e2e-frontend" }]
 
 [tasks.rest-rls]
 description = "Generate and build rest sample with Row-Level Security"

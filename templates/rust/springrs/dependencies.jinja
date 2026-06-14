@@ -6,5 +6,5 @@ summer = {git="https://github.com/dinosath/spring-rs", branch="master"}
 #summer-sea-orm = { version = "0.5.0-rc.0", default-features = false, features = ["postgres","with-web","rustls"] }
 summer-sea-orm = { git="https://github.com/dinosath/spring-rs", branch="master", version="0.5.0-rc.0", default-features = false, features = ["postgres","with-web","rustls"] }
 {% endif -%}
-{{ 'summer-web = {git="https://github.com/dinosath/spring-rs", branch="master"}' if 'rest' in protocols }}
+{{ 'summer-web = {git="https://github.com/dinosath/spring-rs", branch="master"}' if 'rest' in protocols or frontend != 'none' }}
 {{ 'summer-grpc = {git="https://github.com/dinosath/spring-rs", branch="master"}' if 'grpc' in protocols }}

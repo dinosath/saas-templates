@@ -2,8 +2,7 @@ import { createClient, type Client } from '@connectrpc/connect';
 import { createGrpcWebTransport } from '@connectrpc/connect-web';
 import type { DataProvider, GetListParams, GetOneParams, CreateParams, UpdateParams, DeleteParams, GetManyParams, GetManyReferenceParams } from 'ra-core';
 {% for entity_name, entity in entities | items | selectattr("1.attributes") -%}
-import { {{ entity_name | pascal_case }}Service } from '@/gen/{{ project_name | snake_case }}_connect';
-import type { {{ entity_name | pascal_case }}, Create{{ entity_name | pascal_case }}Request, Update{{ entity_name | pascal_case }}Request } from '@/gen/{{ project_name | snake_case }}_pb';
+import { {{ entity_name | pascal_case }}Service } from '@/gen/proto/{{ project_name | snake_case }}_pb';
 {% endfor %}
 
 const transport = createGrpcWebTransport({
@@ -49,7 +48,7 @@ const toPlainObject = (entity: Record<string, unknown>): Record<string, unknown>
 
 export const grpcDataProvider: DataProvider = {
     getList: async (resource: string, params: GetListParams) => {
-        const { pagination, sort, filter } = params;
+        const { pagination } = params;
         const { page = 1, perPage = 10 } = pagination || {};
         
         const client = clients[resource as keyof ResourceClients];
@@ -68,7 +67,7 @@ export const grpcDataProvider: DataProvider = {
         const data = (response[dataKey] as unknown[] || []).map(item => toPlainObject(item as Record<string, unknown>));
 
         return {
-            data,
+            data: data as any[],
             total: data.length + (response.nextPageToken ? perPage : 0),
         };
     },
@@ -84,7 +83,7 @@ export const grpcDataProvider: DataProvider = {
         });
 
         return {
-            data: toPlainObject(response),
+            data: toPlainObject(response) as any,
         };
     },
 
@@ -104,7 +103,7 @@ export const grpcDataProvider: DataProvider = {
             })
         );
 
-        return { data };
+        return { data: data as any[] };
     },
 
     getManyReference: async (resource: string, params: GetManyReferenceParams) => {
@@ -130,7 +129,7 @@ export const grpcDataProvider: DataProvider = {
         const response = await (client as unknown as { create: (req: Record<string, unknown>) => Promise<Record<string, unknown>> }).create(params.data);
 
         return {
-            data: toPlainObject(response),
+            data: toPlainObject(response) as any,
         };
     },
 
@@ -146,7 +145,7 @@ export const grpcDataProvider: DataProvider = {
         });
 
         return {
-            data: toPlainObject(response),
+            data: toPlainObject(response) as any,
         };
     },
 
@@ -180,7 +179,7 @@ export const grpcDataProvider: DataProvider = {
         });
 
         return {
-            data: params.previousData as Record<string, unknown>,
+            data: params.previousData as any,
         };
     },
 

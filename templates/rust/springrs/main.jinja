@@ -3,7 +3,7 @@ use mimalloc::MiMalloc;
 {{ 'use summer::{auto_config, App};' if 'rest' in protocols else 'use summer::App;' }}
 {{ 'use summer_sea_orm::{SeaOrmPlugin};' if database != 'none' and orm == 'seaorm' }}
 {{ 'use summer_opentelemetry::{KeyValue, OpenTelemetryPlugin, ResourceConfigurator, SERVICE_NAME, SERVICE_VERSION, };' if 'open-telemetry' in features }}
-{{ 'use summer_web::{WebConfigurator, WebPlugin};' if 'rest' in protocols }}
+{{ 'use summer_web::{WebConfigurator, WebPlugin};' if 'rest' in protocols or frontend != 'none' }}
 {{ 'use ' ~ project_name|snake_case ~ '::services::seaorm_migration_plugin::SeaOrmMigrationPlugin;' if add_migrations and orm == 'seaorm' }}
 {% if row_level_security -%}
 use {{ project_name | snake_case }}::services::tenant_plugin::TenantPlugin;
@@ -27,7 +27,7 @@ async fn main() {
         {{ '.add_plugin(AuthPlugin)' if authentication == 'jwt' and 'rest' in protocols }}
         {{ '.add_plugin(TenantPlugin)' if row_level_security }}
         {{ '.add_plugin(SeaOrmMigrationPlugin)' if add_migrations and orm == 'seaorm' }}
-        {{ '.add_plugin(WebPlugin)' if 'rest' in protocols }}
+        {{ '.add_plugin(WebPlugin)' if 'rest' in protocols or frontend != 'none' }}
         {{ '.add_plugin(OpenTelemetryPlugin)' if 'open-telemetry' in features }}
         {{ '.add_plugin(GrpcPlugin)' if 'grpc' in protocols }}
         {% if frontend == 'leptos' -%}

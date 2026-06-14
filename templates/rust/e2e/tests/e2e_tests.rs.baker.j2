@@ -1,6 +1,8 @@
 {% import "macros.jinja" as macros -%}
-{% if 'rest' in protocols %}
+{% if 'rest' in protocols or frontend != 'none' %}
 use e2e::{base_url, http_client};
+{% endif %}
+{% if 'rest' in protocols %}
 {% if authentication == 'jwt' %}
 use e2e::authed_http_client;
 {% endif %}

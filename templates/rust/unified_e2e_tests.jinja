@@ -290,6 +290,8 @@ mod auth_tests {
 {% endif -%}
 {% elif attr_prop.type == 'integer' -%}
             "{{ attr_name | snake_case }}": {{ attr_prop.default | default(1) }},
+{% elif attr_prop.type == 'number' or attr_prop.type == 'decimal' or attr_prop.type == 'float' -%}
+            "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
 {% elif attr_prop.type == 'boolean' -%}
             "{{ attr_name | snake_case }}": {{ attr_prop.default | default('true') | lower }},
 {% elif attr_prop.type == 'text' -%}
@@ -466,6 +468,8 @@ mod {{ entity_snake }}_tests {
 {% endif -%}
 {% elif attr_prop.type == 'integer' -%}
                 "{{ attr_name | snake_case }}": {{ attr_prop.default | default(99) }},
+{% elif attr_prop.type == 'number' or attr_prop.type == 'decimal' or attr_prop.type == 'float' -%}
+                "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
 {% elif attr_prop.type == 'boolean' -%}
                 "{{ attr_name | snake_case }}": {{ 'false' if attr_prop.default == 'true' else 'true' }},
 {% elif attr_prop.type == 'text' -%}
@@ -589,6 +593,8 @@ mod rls_tests {
 {% endif -%}
 {% elif attr_prop.type == 'integer' -%}
             "{{ attr_name | snake_case }}": {{ attr_prop.default | default(42) }},
+{% elif attr_prop.type == 'number' or attr_prop.type == 'decimal' or attr_prop.type == 'float' -%}
+            "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
 {% elif attr_prop.type == 'boolean' -%}
             "{{ attr_name | snake_case }}": {{ attr_prop.default | default('true') | lower }},
 {% elif attr_prop.type == 'text' -%}
@@ -866,6 +872,8 @@ mod rls_tests {
 {% endif -%}
 {% elif attr_prop.type == 'integer' -%}
                 "{{ attr_name | snake_case }}": {{ attr_prop.default | default(1) }},
+{% elif attr_prop.type == 'number' or attr_prop.type == 'decimal' or attr_prop.type == 'float' -%}
+                "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
 {% elif attr_prop.type == 'boolean' -%}
                 "{{ attr_name | snake_case }}": {{ attr_prop.default | default('true') | lower }},
 {% elif attr_prop.type == 'text' -%}
@@ -916,6 +924,8 @@ mod rls_tests {
 {% endif -%}
 {% elif attr_prop.type == 'integer' -%}
                 "{{ attr_name | snake_case }}": {{ attr_prop.default | default(7) }},
+{% elif attr_prop.type == 'number' or attr_prop.type == 'decimal' or attr_prop.type == 'float' -%}
+                "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
 {% elif attr_prop.type == 'boolean' -%}
                 "{{ attr_name | snake_case }}": {{ attr_prop.default | default('true') | lower }},
 {% elif attr_prop.type == 'text' -%}
