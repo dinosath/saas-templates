@@ -33,7 +33,11 @@ function App() {
             {% endif -%}
         >
             {% for entity_name,entity in entities | items | selectattr("1.attributes") -%}
+            {% if entity.group -%}
+            <Resource { ...{{ entity_name | camel_case }} } options={{ '{' }}{{ '{' }} group: "{{ entity.group }}" {{ '}' }}{{ '}' }}/>
+            {%- else -%}
             <Resource { ...{{ entity_name | camel_case }} }/>
+            {%- endif %}
             {% endfor %}
         </Admin>
     );

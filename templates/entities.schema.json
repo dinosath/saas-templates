@@ -4,11 +4,25 @@
     "patternProperties": {
         "^[A-Za-z][A-Za-z0-9_-]*$": {
             "type": "object",
-            "required": ["kind", "attributes"],
+            "required": [
+                "kind",
+                "attributes"
+            ],
             "properties": {
-                "type": { "type": "string", "const": "object" },
-                "title": { "type": "string" },
-                "description": { "type": "string" },
+                "type": {
+                    "type": "string",
+                    "const": "object"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "group": {
+                    "type": "string",
+                    "description": "Sidebar group label \u2014 entities sharing the same value are grouped together under a named SidebarGroup in the navigation."
+                },
                 "rls": {
                     "type": "boolean",
                     "description": "Override the global row_level_security setting for this entity. When true, a tenant_id column and RLS policy are created."
@@ -18,7 +32,9 @@
                     "patternProperties": {
                         "^[a-zA-Z_][a-zA-Z0-9_-]*$": {
                             "type": "object",
-                            "required": ["type"],
+                            "required": [
+                                "type"
+                            ],
                             "properties": {
                                 "type": {
                                     "type": "string",
@@ -38,13 +54,21 @@
                                         "enumeration"
                                     ]
                                 },
-                                "description": { "type": "string" },
-                                "required": { "type": "boolean" },
-                                "unique": { "type": "boolean" },
+                                "description": {
+                                    "type": "string"
+                                },
+                                "required": {
+                                    "type": "boolean"
+                                },
+                                "unique": {
+                                    "type": "boolean"
+                                },
                                 "default": {},
                                 "enum": {
                                     "type": "array",
-                                    "items": { "type": "string" }
+                                    "items": {
+                                        "type": "string"
+                                    }
                                 },
                                 "relation": {
                                     "type": "string",
@@ -55,17 +79,29 @@
                                         "manyToMany"
                                     ]
                                 },
-                                "target": { "type": "string" },
-                                "inversedBy": { "type": "string" },
-                                "mappedBy": { "type": "string" },
-                                "min": { "type": "number" },
-                                "max": { "type": "number" }
+                                "target": {
+                                    "type": "string"
+                                },
+                                "inversedBy": {
+                                    "type": "string"
+                                },
+                                "mappedBy": {
+                                    "type": "string"
+                                },
+                                "min": {
+                                    "type": "number"
+                                },
+                                "max": {
+                                    "type": "number"
+                                }
                             },
                             "allOf": [
                                 {
                                     "if": {
                                         "properties": {
-                                            "type": { "const": "relation" }
+                                            "type": {
+                                                "const": "relation"
+                                            }
                                         }
                                     },
                                     "then": {
@@ -93,9 +129,21 @@
                                     "else": {
                                         "not": {
                                             "anyOf": [
-                                                { "required": ["relation"] },
-                                                { "required": ["target"] },
-                                                { "required": ["mappedBy"] }
+                                                {
+                                                    "required": [
+                                                        "relation"
+                                                    ]
+                                                },
+                                                {
+                                                    "required": [
+                                                        "target"
+                                                    ]
+                                                },
+                                                {
+                                                    "required": [
+                                                        "mappedBy"
+                                                    ]
+                                                }
                                             ]
                                         }
                                     }
@@ -103,26 +151,42 @@
                                 {
                                     "if": {
                                         "properties": {
-                                            "type": { "enum": ["integer"] }
+                                            "type": {
+                                                "enum": [
+                                                    "integer"
+                                                ]
+                                            }
                                         }
                                     },
                                     "then": {
                                         "properties": {
-                                            "min": { "type": "integer" },
-                                            "max": { "type": "integer" }
+                                            "min": {
+                                                "type": "integer"
+                                            },
+                                            "max": {
+                                                "type": "integer"
+                                            }
                                         }
                                     }
                                 },
                                 {
                                     "if": {
                                         "properties": {
-                                            "type": { "enum": ["float"] }
+                                            "type": {
+                                                "enum": [
+                                                    "float"
+                                                ]
+                                            }
                                         }
                                     },
                                     "then": {
                                         "properties": {
-                                            "min": { "type": "number" },
-                                            "max": { "type": "number" }
+                                            "min": {
+                                                "type": "number"
+                                            },
+                                            "max": {
+                                                "type": "number"
+                                            }
                                         }
                                     }
                                 },
@@ -131,7 +195,10 @@
                                         "properties": {
                                             "type": {
                                                 "not": {
-                                                    "enum": ["integer", "float"]
+                                                    "enum": [
+                                                        "integer",
+                                                        "float"
+                                                    ]
                                                 }
                                             }
                                         }
@@ -139,8 +206,16 @@
                                     "then": {
                                         "not": {
                                             "anyOf": [
-                                                { "required": ["min"] },
-                                                { "required": ["max"] }
+                                                {
+                                                    "required": [
+                                                        "min"
+                                                    ]
+                                                },
+                                                {
+                                                    "required": [
+                                                        "max"
+                                                    ]
+                                                }
                                             ]
                                         }
                                     }

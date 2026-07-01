@@ -12,8 +12,8 @@ use validator::Validate;
 
 {% for name,property in entity.attributes | items | selectattr('1.enum') -%}
 #[derive(PartialEq, Clone, Debug, Default, Eq, Serialize, Deserialize, diesel_derive_enum::DbEnum)]
-#[DbValueStyle = "SCREAMING_SNAKE_CASE"]
-pub enum {{ entity_name | pascal_case }}{{ name | pascal_case }}{
+#[DbValueStyle = "snake_case"]
+pub enum {{ name | pascal_case }}{
     {% for enum in property.enum -%}
     {{ '#[default]' if (property.default and enum == property.default) or (not property.default and loop.first) }}
     #[serde(rename = "{{ enum }}")]
@@ -38,10 +38,6 @@ pub struct {{ entity_name | pascal_case }} {
     {%- if macros.relation_is_many_to_many(property)=='true' or macros.relation_is_one_to_many(property)=='true' -%}{% continue -%}{%- endif -%}
     {%- if macros.relation_is_many_to_one(property)=='true' or macros.relation_is_one_to_one(property)=='true' -%}
     pub {{ name | snake_case }}_id: {% if not property.required %}Option<{% endif %}i32{% if not property.required %}>{% endif %},
-    {% elif property.type == 'enumeration' -%}
-    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
-    {% endif -%}
-    pub {{ field_name }}: {% if not property.required %}Option<{% endif %}{{ entity_name | pascal_case }}{{ name | pascal_case }}{% if not property.required %}>{% endif %},
     {% elif property.type -%}
     {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
     {% endif -%}
@@ -63,11 +59,6 @@ pub struct New{{ entity_name | pascal_case }} {
     {%- if property.readOnly or macros.relation_is_many_to_many(property)=='true' or macros.relation_is_one_to_many(property)=='true' -%}{% continue -%}{%- endif -%}
     {%- if macros.relation_is_many_to_one(property)=='true' or macros.relation_is_one_to_one(property)=='true' -%}
     pub {{ name | snake_case }}_id: {% if not property.required %}Option<{% endif %}i32{% if not property.required %}>{% endif %},
-    {% elif property.type == 'enumeration' -%}
-    {{ macros.validator_attrs(name, property) }}
-    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
-    {% endif -%}
-    pub {{ field_name }}: {% if not property.required %}Option<{% endif %}{{ entity_name | pascal_case }}{{ name | pascal_case }}{% if not property.required %}>{% endif %},
     {% elif property.type -%}
     {{ macros.validator_attrs(name, property) }}
     {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
@@ -89,11 +80,6 @@ pub struct {{ entity_name | pascal_case }}Update {
     {%- if property.readOnly or macros.relation_is_many_to_many(property)=='true' or macros.relation_is_one_to_many(property)=='true' -%}{% continue -%}{%- endif -%}
     {%- if macros.relation_is_many_to_one(property)=='true' or macros.relation_is_one_to_one(property)=='true' -%}
     pub {{ name | snake_case }}_id: {% if not property.required %}Option<{% endif %}i32{% if not property.required %}>{% endif %},
-    {% elif property.type == 'enumeration' -%}
-    {{ macros.validator_attrs(name, property) }}
-    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
-    {% endif -%}
-    pub {{ field_name }}: {% if not property.required %}Option<{% endif %}{{ entity_name | pascal_case }}{{ name | pascal_case }}{% if not property.required %}>{% endif %},
     {% elif property.type -%}
     {{ macros.validator_attrs(name, property) }}
     {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
@@ -117,8 +103,6 @@ pub struct {{ entity_name | pascal_case }}Response {
     {%- if macros.relation_is_many_to_many(property)=='true' or macros.relation_is_one_to_many(property)=='true' -%}{% continue -%}{%- endif -%}
     {%- if macros.relation_is_many_to_one(property)=='true' or macros.relation_is_one_to_one(property)=='true' -%}
     pub {{ name | snake_case }}_id: {% if not property.required %}Option<{% endif %}i32{% if not property.required %}>{% endif %},
-    {% elif property.type == 'enumeration' -%}
-    pub {{ rust_types.rust_var(name, false) }}: {% if not property.required %}Option<{% endif %}{{ entity_name | pascal_case }}{{ name | pascal_case }}{% if not property.required %}>{% endif %},
     {% elif property.type -%}
     pub {{ rust_types.rust_var(name, false) }}: {{ rust_types.get_rust_type(name, property) }},
     {% endif -%}

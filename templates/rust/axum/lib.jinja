@@ -124,6 +124,9 @@ pub fn build_router({% if database != 'none' %}state: app_state::AppState{% endi
 {% if 'rest' in protocols -%}
 /// Build the fully-initialised axum [`Router`] for testing.
 pub async fn create_app() -> anyhow::Result<axum::Router> {
+    {% if authentication == 'jwt' -%}
+    services::auth_plugin::init_auth().await;
+    {% endif -%}
     {% if database != 'none' -%}
     let state = app_state::AppState::new().await;
     {% endif -%}

@@ -6,7 +6,7 @@ diesel::table! {
     {% if loop.first -%}
     use diesel::sql_types::*;
     {% endif -%}
-    use super::super::{{ entity_name | snake_case }}::{{ name | pascal_case }}Mapping;
+    use super::super::{{ entity_name | snake_case }}::{{ entity_name | pascal_case }}{{ name | pascal_case }}Mapping;
     {% if loop.last %}
     {% endif -%}
     {% endfor -%}
@@ -43,7 +43,7 @@ diesel::table! {
         {%- elif property.type == 'email' -%}
         {{ rust_types.rust_var(name, false) }} -> {% if not property.required %}Nullable<{% endif %}Varchar{% if not property.required %}>{% endif %},
         {%- elif property.type == 'enumeration' -%}
-        {{ rust_types.rust_var(name, false) }} -> {% if not property.required %}Nullable<{% endif %}{{ name | pascal_case }}Mapping{% if not property.required %}>{% endif %},
+        {{ rust_types.rust_var(name, false) }} -> {% if not property.required %}Nullable<{% endif %}{{ entity_name | pascal_case }}{{ name | pascal_case }}Mapping{% if not property.required %}>{% endif %},
         {%- elif property.type == 'json' -%}
         {{ rust_types.rust_var(name, false) }} -> {% if not property.required %}Nullable<{% endif %}Jsonb{% if not property.required %}>{% endif %},
         {%- elif property.type == 'uid' -%}

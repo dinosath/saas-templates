@@ -6,7 +6,7 @@
 {%- for _name, _prop in entity.attributes | items -%}
   {%- if (_name == 'state' or _name == 'status') and _prop.type == 'enumeration' and ns.state_field_name is none -%}
     {%- set ns.state_field_name = _name | snake_case -%}
-    {%- set ns.state_enum_type = _name | pascal_case -%}
+    {%- set ns.state_enum_type = (entity_name | pascal_case) ~ (_name | pascal_case) -%}
     {%- set ns.state_type_rust = (entity_name | pascal_case) + (_name | pascal_case) -%}
   {%- endif -%}
   {%- if _prop.type in ['string', 'text'] and _name in ['name', 'title', 'label'] and ns.search_col is none -%}

@@ -16,6 +16,13 @@ export default defineConfig({
             target: 'http://localhost:8080',
             changeOrigin: true,
         },
+{% if frontend_protocol == 'grpc-web' %}
+        // Proxy gRPC-Web requests (proto package path) to the backend in development
+        '/{{ project_name | snake_case }}.': {
+            target: 'http://localhost:8080',
+            changeOrigin: true,
+        },
+{% endif %}
     },
   },
 })

@@ -294,6 +294,12 @@ mod auth_tests {
             "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
 {% elif attr_prop.type == 'boolean' -%}
             "{{ attr_name | snake_case }}": {{ attr_prop.default | default('true') | lower }},
+{% elif attr_prop.type == 'date' -%}
+            "{{ attr_name | snake_case }}": "2024-01-15",
+{% elif attr_prop.type == 'datetime' or attr_prop.type == 'timestamp' -%}
+            "{{ attr_name | snake_case }}": "2024-01-15T00:00:00",
+{% elif attr_prop.type == 'time' -%}
+            "{{ attr_name | snake_case }}": "12:00:00",
 {% elif attr_prop.type == 'text' -%}
             "{{ attr_name | snake_case }}": format!("{{ prefix }} {{ attr_name | title }} content {}", suffix),
 {% elif attr_prop.type == 'enumeration' or attr_prop.enum -%}
@@ -472,6 +478,12 @@ mod {{ entity_snake }}_tests {
                 "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
 {% elif attr_prop.type == 'boolean' -%}
                 "{{ attr_name | snake_case }}": {{ 'false' if attr_prop.default == 'true' else 'true' }},
+{% elif attr_prop.type == 'date' -%}
+                "{{ attr_name | snake_case }}": "2024-06-15",
+{% elif attr_prop.type == 'datetime' or attr_prop.type == 'timestamp' -%}
+                "{{ attr_name | snake_case }}": "2024-06-15T00:00:00",
+{% elif attr_prop.type == 'time' -%}
+                "{{ attr_name | snake_case }}": "13:00:00",
 {% elif attr_prop.type == 'text' -%}
                 "{{ attr_name | snake_case }}": format!("Updated {{ attr_name | title }} content {}", suffix),
 {% elif attr_prop.type == 'enumeration' or attr_prop.enum -%}
@@ -597,6 +609,12 @@ mod rls_tests {
             "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
 {% elif attr_prop.type == 'boolean' -%}
             "{{ attr_name | snake_case }}": {{ attr_prop.default | default('true') | lower }},
+{% elif attr_prop.type == 'date' -%}
+            "{{ attr_name | snake_case }}": "2024-01-15",
+{% elif attr_prop.type == 'datetime' or attr_prop.type == 'timestamp' -%}
+            "{{ attr_name | snake_case }}": "2024-01-15T00:00:00",
+{% elif attr_prop.type == 'time' -%}
+            "{{ attr_name | snake_case }}": "12:00:00",
 {% elif attr_prop.type == 'text' -%}
             "{{ attr_name | snake_case }}": format!("RLS {} content {}", "{{ attr_name | title }}", suffix),
 {% elif attr_prop.type == 'enumeration' or attr_prop.enum -%}
@@ -876,6 +894,12 @@ mod rls_tests {
                 "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
 {% elif attr_prop.type == 'boolean' -%}
                 "{{ attr_name | snake_case }}": {{ attr_prop.default | default('true') | lower }},
+{% elif attr_prop.type == 'date' -%}
+                "{{ attr_name | snake_case }}": "2024-01-15",
+{% elif attr_prop.type == 'datetime' or attr_prop.type == 'timestamp' -%}
+                "{{ attr_name | snake_case }}": "2024-01-15T00:00:00",
+{% elif attr_prop.type == 'time' -%}
+                "{{ attr_name | snake_case }}": "12:00:00",
 {% elif attr_prop.type == 'text' -%}
                 "{{ attr_name | snake_case }}": "Non-RLS test content",
 {% elif attr_prop.type == 'enumeration' or attr_prop.enum -%}
@@ -928,6 +952,12 @@ mod rls_tests {
                 "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
 {% elif attr_prop.type == 'boolean' -%}
                 "{{ attr_name | snake_case }}": {{ attr_prop.default | default('true') | lower }},
+{% elif attr_prop.type == 'date' -%}
+                "{{ attr_name | snake_case }}": "2024-01-15",
+{% elif attr_prop.type == 'datetime' or attr_prop.type == 'timestamp' -%}
+                "{{ attr_name | snake_case }}": "2024-01-15T00:00:00",
+{% elif attr_prop.type == 'time' -%}
+                "{{ attr_name | snake_case }}": "12:00:00",
 {% elif attr_prop.type == 'text' -%}
                 "{{ attr_name | snake_case }}": "No tenant id test content",
 {% elif attr_prop.type == 'enumeration' or attr_prop.enum -%}

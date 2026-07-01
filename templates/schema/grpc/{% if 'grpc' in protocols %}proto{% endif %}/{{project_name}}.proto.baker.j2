@@ -2,7 +2,7 @@
     {# Define a complex map for Protobuf types with type, format, min, and max #}
     {%- set proto_map = [
         {"type": "string", "format": "uuid", "result": "string"},
-        {"type": "string", "format": "date-time", "result": "google.protobuf.Timestamp"},
+        {"type": "string", "format": "date-time", "result": "string"},
         {"type": "string", "format": "date", "result": "string"},
         {"type": "string", "format": "time", "result": "string"},
         {"type": "string", "format": "email", "result": "string"},
@@ -41,9 +41,9 @@ syntax = "proto3";
 
 package {{ project_name | snake_case }};
 
-import "google/protobuf/timestamp.proto";
-import "google/protobuf/empty.proto";
-import "google/protobuf/wrappers.proto";
+// No well-known proto imports needed
+
+message Empty {}
 
 {% for entity_name,entity in entities | items -%}
 {% if entity.attributes | items %}
@@ -60,8 +60,8 @@ enum {{ name | pascal_case }} {
 
 message {{ message }} {
     string id = 1;
-    google.protobuf.Timestamp created_at = 2;
-    google.protobuf.Timestamp updated_at = 3;
+    string created_at = 2;
+    string updated_at = 3;
     {% for name, property in entity.attributes | items -%}
     {{'optional' if name not in entity.required}} {{ get_proto_type(name, property) }} {{ name | snake_case }} = {{ loop.index + 3 }};
     {% endfor %}
@@ -75,8 +75,8 @@ message Create{{ message }}Request {
 
 message Update{{ message }}Request {
     string id = 1;
-    google.protobuf.Timestamp created_at = 2;
-    google.protobuf.Timestamp updated_at = 3;
+    string created_at = 2;
+    string updated_at = 3;
     {% for name, property in entity.attributes | items -%}
     {{'optional' if name not in entity.required}} {{ get_proto_type(name, property) }} {{ name | snake_case }} = {{ loop.index + 3 }};
     {% endfor %}
@@ -109,7 +109,7 @@ service {{ message }}Service {
   rpc Create(Create{{ message }}Request) returns ({{ message }});
   rpc Get(Get{{ message }}Request) returns ({{ message }});
   rpc Update(Update{{ message }}Request) returns ({{ message }});
-  rpc Delete(Delete{{ message }}Request) returns (google.protobuf.Empty);
+  rpc Delete(Delete{{ message }}Request) returns (Empty);
   rpc List(List{{ message_plural }}Request) returns (List{{ message_plural }}Response);
 }
 

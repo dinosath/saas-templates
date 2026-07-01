@@ -15,13 +15,13 @@ const {{ entity_name | camel_case }}Client = createClient({{ entity_name | pasca
 
 type ResourceClients = {
 {% for entity_name, entity in entities | items | selectattr("1.attributes") -%}
-    '{{ entity_name | plural | snake_case }}': Client<typeof {{ entity_name | pascal_case }}Service>;
+    '{{ entity_name | plural | kebab_case }}': Client<typeof {{ entity_name | pascal_case }}Service>;
 {% endfor %}
 };
 
 const clients: ResourceClients = {
 {% for entity_name, entity in entities | items | selectattr("1.attributes") -%}
-    '{{ entity_name | plural | snake_case }}': {{ entity_name | camel_case }}Client,
+    '{{ entity_name | plural | kebab_case }}': {{ entity_name | camel_case }}Client,
 {% endfor %}
 };
 

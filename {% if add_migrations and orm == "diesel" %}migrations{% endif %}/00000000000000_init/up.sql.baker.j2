@@ -26,8 +26,8 @@ $$ LANGUAGE plpgsql;
 {% if property.enum -%}
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '{{ name | snake_case }}') THEN
-        CREATE TYPE {{ schema_name }}.{{ name | snake_case }} AS ENUM (
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '{{ entity_name | snake_case }}_{{ name | snake_case }}') THEN
+        CREATE TYPE {{ schema_name }}.{{ entity_name | snake_case }}_{{ name | snake_case }} AS ENUM (
             {{ "'" ~ (property.enum | map('string') | join("', '")) ~ "'" }}
         );
     END IF;
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS {{ schema_name }}.{{ table_name }} (
     {%- elif property.type == 'uid' -%}
     {{ name | snake_case }} UUID{{ ' NOT NULL' if is_required }},
     {%- elif property.type == 'enumeration' -%}
-    {{ name | snake_case }} {{ schema_name }}.{{ name | snake_case }}{{ ' NOT NULL' if is_required }},
+    {{ name | snake_case }} {{ schema_name }}.{{ entity_name | snake_case }}_{{ name | snake_case }}{{ ' NOT NULL' if is_required }},
     {%- endif -%}
     {% endfor -%}
     PRIMARY KEY (id)

@@ -338,8 +338,9 @@ pub async fn authed_http_client(#[future] test_env: Arc<Mutex<TestEnvironment>>)
 {% endif %}
 
 {% if 'grpc' in protocols %}
-/// Generated gRPC client types (compiled from proto at build time)
+/// Generated gRPC client types (compiled from proto at build time via grpc-protobuf-build).
+/// Message types use protobuf 4.x UPB backend; service stubs in {proto_name}_service_client modules.
 pub mod proto {
-    tonic::include_proto!("{{ project_name | snake_case }}");
+    grpc::include_proto!("{{ project_name | snake_case }}");
 }
 {% endif %}

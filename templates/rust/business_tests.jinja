@@ -154,6 +154,12 @@
             "{{ fn | snake_case }}": {{ fp.default | default(0.0) }},
 {%- elif fp.type == 'boolean' -%}
             "{{ fn | snake_case }}": {{ fp.default | default('true') | lower }},
+{%- elif fp.type == 'date' -%}
+            "{{ fn | snake_case }}": "2024-01-15",
+{%- elif fp.type == 'datetime' or fp.type == 'timestamp' -%}
+            "{{ fn | snake_case }}": "2024-01-15T00:00:00",
+{%- elif fp.type == 'time' -%}
+            "{{ fn | snake_case }}": "12:00:00",
 {%- elif fp.enum or fp.type == 'enumeration' -%}
             "{{ fn | snake_case }}": "{{ fp.enum[0] }}",
 {%- endif -%}

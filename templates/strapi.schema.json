@@ -3,62 +3,80 @@
     "title": "Strapi v5 Content Types Schema",
     "description": "A map of Strapi v5 content-types keyed by content-type name (e.g., BlogPost, UserProfile). Each value follows Strapi's schema.json structure.",
     "type": "object",
-
     "patternProperties": {
         "^[A-Za-z][A-Za-z0-9_-]*$": {
             "type": "object",
             "description": "Strapi v5 content-type definition (schema.json format).",
-            "required": ["kind", "collectionName", "info", "attributes"],
+            "required": [
+                "kind",
+                "collectionName",
+                "info",
+                "attributes"
+            ],
             "properties": {
                 "kind": {
                     "type": "string",
-                    "enum": ["collectionType", "singleType"]
+                    "enum": [
+                        "collectionType",
+                        "singleType"
+                    ]
                 },
-
                 "collectionName": {
                     "type": "string",
                     "description": "Database collection/table name. Usually snake_case plural for collectionType."
                 },
-
                 "info": {
                     "type": "object",
-                    "required": ["displayName"],
+                    "required": [
+                        "displayName"
+                    ],
                     "properties": {
-                        "displayName": { "type": "string" },
-                        "singularName": { "type": "string" },
-                        "pluralName": { "type": "string" },
-                        "description": { "type": "string" },
-                        "icon": { "type": "string" }
+                        "displayName": {
+                            "type": "string"
+                        },
+                        "singularName": {
+                            "type": "string"
+                        },
+                        "pluralName": {
+                            "type": "string"
+                        },
+                        "description": {
+                            "type": "string"
+                        },
+                        "icon": {
+                            "type": "string"
+                        }
                     },
                     "additionalProperties": true
                 },
-
                 "options": {
                     "type": "object",
                     "description": "Content-type options; Strapi v5 includes draftAndPublish and may add more in the future.",
                     "properties": {
-                        "draftAndPublish": { "type": "boolean" }
+                        "draftAndPublish": {
+                            "type": "boolean"
+                        }
                     },
                     "additionalProperties": true
                 },
-
                 "pluginOptions": {
                     "type": "object",
                     "description": "Plugin-specific options (e.g., i18n, users-permissions).",
                     "additionalProperties": true
                 },
-
                 "priority": {
                     "type": "integer",
                     "default": 0,
                     "description": "Priority for ordering collections."
                 },
-
                 "rls": {
                     "type": "boolean",
                     "description": "Override the global row_level_security setting for this entity. When true, a tenant_id column and RLS policy are created."
                 },
-
+                "group": {
+                    "type": "string",
+                    "description": "Sidebar group label \u2014 entities sharing the same value are grouped together under a named SidebarGroup in the navigation."
+                },
                 "sequence": {
                     "type": "object",
                     "description": "Auto-numbering configuration for a document identifier field. Generates sequential values like INV/2026/00001.",
@@ -94,20 +112,32 @@
                         },
                         "resetInterval": {
                             "type": "string",
-                            "enum": ["never", "yearly", "monthly", "daily"],
+                            "enum": [
+                                "never",
+                                "yearly",
+                                "monthly",
+                                "daily"
+                            ],
                             "default": "never",
                             "description": "When to reset the counter back to startNumber."
                         }
                     },
-                    "required": ["field", "prefix", "padding"]
+                    "required": [
+                        "field",
+                        "prefix",
+                        "padding"
+                    ]
                 },
-
                 "constraints": {
                     "type": "array",
                     "description": "Business validation rules and constraints enforced at the database and/or service layer.",
                     "items": {
                         "type": "object",
-                        "required": ["name", "type", "message"],
+                        "required": [
+                            "name",
+                            "type",
+                            "message"
+                        ],
                         "properties": {
                             "name": {
                                 "type": "string",
@@ -115,12 +145,22 @@
                             },
                             "type": {
                                 "type": "string",
-                                "enum": ["check", "unique_together", "state_transition", "required_if", "immutable_if"],
+                                "enum": [
+                                    "check",
+                                    "unique_together",
+                                    "state_transition",
+                                    "required_if",
+                                    "immutable_if"
+                                ],
                                 "description": "Constraint type: 'check' (SQL CHECK or trigger), 'unique_together' (composite unique index), 'state_transition' (trigger-enforced valid state changes), 'required_if' (trigger-enforced conditional NOT NULL), 'immutable_if' (trigger-enforced field immutability)."
                             },
                             "enforcement": {
                                 "type": "string",
-                                "enum": ["database", "application", "both"],
+                                "enum": [
+                                    "database",
+                                    "application",
+                                    "both"
+                                ],
                                 "default": "database",
                                 "description": "Where the constraint is enforced. 'database' generates SQL CHECK/triggers, 'application' generates service-layer validation, 'both' generates both."
                             },
@@ -134,7 +174,9 @@
                             },
                             "fields": {
                                 "type": "array",
-                                "items": { "type": "string" },
+                                "items": {
+                                    "type": "string"
+                                },
                                 "description": "Fields involved in the constraint. For 'unique_together': generates UNIQUE index on these columns. For 'required_if'/'immutable_if': target columns."
                             },
                             "stateField": {
@@ -144,12 +186,16 @@
                             },
                             "initialStates": {
                                 "type": "array",
-                                "items": { "type": "string" },
+                                "items": {
+                                    "type": "string"
+                                },
                                 "description": "Valid states on INSERT. Generates: DEFAULT + CHECK constraint ensuring new rows start in one of these states."
                             },
                             "terminalStates": {
                                 "type": "array",
-                                "items": { "type": "string" },
+                                "items": {
+                                    "type": "string"
+                                },
                                 "description": "States from which no further updates to any field are allowed (except by system). Generates a BEFORE UPDATE trigger that rejects changes when in terminal state."
                             },
                             "transitions": {
@@ -157,7 +203,10 @@
                                 "description": "Valid state transitions. Generates a BEFORE UPDATE trigger function: validates OLD.state -> NEW.state against this list using a VALUES table lookup.",
                                 "items": {
                                     "type": "object",
-                                    "required": ["from", "to"],
+                                    "required": [
+                                        "from",
+                                        "to"
+                                    ],
                                     "properties": {
                                         "from": {
                                             "type": "string",
@@ -165,7 +214,9 @@
                                         },
                                         "to": {
                                             "type": "array",
-                                            "items": { "type": "string" },
+                                            "items": {
+                                                "type": "string"
+                                            },
                                             "description": "Valid target states reachable from the source state."
                                         }
                                     }
@@ -178,36 +229,105 @@
                         },
                         "allOf": [
                             {
-                                "if": { "properties": { "type": { "const": "check" } }, "required": ["type"] },
-                                "then": { "required": ["condition"] }
+                                "if": {
+                                    "properties": {
+                                        "type": {
+                                            "const": "check"
+                                        }
+                                    },
+                                    "required": [
+                                        "type"
+                                    ]
+                                },
+                                "then": {
+                                    "required": [
+                                        "condition"
+                                    ]
+                                }
                             },
                             {
-                                "if": { "properties": { "type": { "const": "unique_together" } }, "required": ["type"] },
-                                "then": { "required": ["fields"] }
+                                "if": {
+                                    "properties": {
+                                        "type": {
+                                            "const": "unique_together"
+                                        }
+                                    },
+                                    "required": [
+                                        "type"
+                                    ]
+                                },
+                                "then": {
+                                    "required": [
+                                        "fields"
+                                    ]
+                                }
                             },
                             {
-                                "if": { "properties": { "type": { "const": "state_transition" } }, "required": ["type"] },
-                                "then": { "required": ["transitions", "initialStates"] }
+                                "if": {
+                                    "properties": {
+                                        "type": {
+                                            "const": "state_transition"
+                                        }
+                                    },
+                                    "required": [
+                                        "type"
+                                    ]
+                                },
+                                "then": {
+                                    "required": [
+                                        "transitions",
+                                        "initialStates"
+                                    ]
+                                }
                             },
                             {
-                                "if": { "properties": { "type": { "const": "required_if" } }, "required": ["type"] },
-                                "then": { "required": ["fields", "when"] }
+                                "if": {
+                                    "properties": {
+                                        "type": {
+                                            "const": "required_if"
+                                        }
+                                    },
+                                    "required": [
+                                        "type"
+                                    ]
+                                },
+                                "then": {
+                                    "required": [
+                                        "fields",
+                                        "when"
+                                    ]
+                                }
                             },
                             {
-                                "if": { "properties": { "type": { "const": "immutable_if" } }, "required": ["type"] },
-                                "then": { "required": ["fields", "when"] }
+                                "if": {
+                                    "properties": {
+                                        "type": {
+                                            "const": "immutable_if"
+                                        }
+                                    },
+                                    "required": [
+                                        "type"
+                                    ]
+                                },
+                                "then": {
+                                    "required": [
+                                        "fields",
+                                        "when"
+                                    ]
+                                }
                             }
                         ]
                     }
                 },
-
                 "attributes": {
                     "type": "object",
                     "description": "Attribute map keyed by attribute name.",
                     "patternProperties": {
                         "^[a-zA-Z_][a-zA-Z0-9_-]*$": {
                             "type": "object",
-                            "required": ["type"],
+                            "required": [
+                                "type"
+                            ],
                             "properties": {
                                 "type": {
                                     "type": "string",
@@ -234,12 +354,16 @@
                                         "dynamiczone"
                                     ]
                                 },
-
-                                "required": { "type": "boolean" },
-                                "unique": { "type": "boolean" },
-                                "private": { "type": "boolean" },
+                                "required": {
+                                    "type": "boolean"
+                                },
+                                "unique": {
+                                    "type": "boolean"
+                                },
+                                "private": {
+                                    "type": "boolean"
+                                },
                                 "default": {},
-
                                 "minLength": {
                                     "type": "integer",
                                     "minimum": 0
@@ -248,22 +372,26 @@
                                     "type": "integer",
                                     "minimum": 0
                                 },
-                                "regex": { "type": "string" },
-
-                                "min": { "type": "number" },
-                                "max": { "type": "number" },
-
+                                "regex": {
+                                    "type": "string"
+                                },
+                                "min": {
+                                    "type": "number"
+                                },
+                                "max": {
+                                    "type": "number"
+                                },
                                 "multiple": {
                                     "type": "boolean",
                                     "description": "For media/component relations where multiple values are allowed."
                                 },
-
                                 "enum": {
                                     "type": "array",
-                                    "items": { "type": "string" },
+                                    "items": {
+                                        "type": "string"
+                                    },
                                     "description": "Allowed values for enumeration."
                                 },
-
                                 "relation": {
                                     "type": "string",
                                     "enum": [
@@ -288,23 +416,21 @@
                                     "type": "string",
                                     "description": "Name of the attribute on the source used to map the relation when required."
                                 },
-
                                 "component": {
                                     "type": "string",
                                     "description": "Component UID (e.g., shared.address). Used when type = component."
                                 },
-
                                 "components": {
                                     "type": "array",
                                     "description": "List of component UIDs for dynamic zones.",
-                                    "items": { "type": "string" }
+                                    "items": {
+                                        "type": "string"
+                                    }
                                 },
-
                                 "repeatable": {
                                     "type": "boolean",
                                     "description": "For component attributes to allow multiple entries."
                                 },
-
                                 "allowedTypes": {
                                     "type": "array",
                                     "items": {
@@ -318,35 +444,32 @@
                                     },
                                     "description": "Media allowed types filter."
                                 },
-
                                 "maxSize": {
                                     "type": "number",
                                     "description": "Max media size in MB."
                                 },
-
                                 "targetField": {
                                     "type": "string",
                                     "description": "For UID fields: the attribute whose value populates the UID."
                                 },
-
                                 "config": {
                                     "type": "object",
                                     "description": "Advanced attribute config (indices, custom options, ACL).",
                                     "additionalProperties": true
                                 },
-
                                 "index": {
                                     "type": "boolean",
                                     "description": "Hint to create an index; actual support is defined by Strapi/DB layer."
                                 },
-
                                 "computed": {
                                     "type": "boolean",
                                     "description": "When true, this field is computed server-side and not directly writable. The value is derived from other fields via the 'depends' and 'compute' properties."
                                 },
                                 "depends": {
                                     "type": "array",
-                                    "items": { "type": "string" },
+                                    "items": {
+                                        "type": "string"
+                                    },
                                     "description": "List of field paths that trigger recomputation of this computed field. Supports dot notation for related fields (e.g., 'lines.priceSubtotal'). Only valid when computed=true."
                                 },
                                 "compute": {
@@ -358,36 +481,53 @@
                                     "description": "When true, the computed value is persisted in the database (materialized). When false, it is calculated on-the-fly. Default: true. Only valid when computed=true."
                                 }
                             },
-
                             "allOf": [
                                 {
                                     "if": {
                                         "properties": {
-                                            "type": { "const": "enumeration" }
+                                            "type": {
+                                                "const": "enumeration"
+                                            }
                                         },
-                                        "required": ["type"]
+                                        "required": [
+                                            "type"
+                                        ]
                                     },
-                                    "then": { "required": ["enum"] }
+                                    "then": {
+                                        "required": [
+                                            "enum"
+                                        ]
+                                    }
                                 },
                                 {
                                     "if": {
                                         "properties": {
-                                            "type": { "const": "uid" }
+                                            "type": {
+                                                "const": "uid"
+                                            }
                                         },
-                                        "required": ["type"]
+                                        "required": [
+                                            "type"
+                                        ]
                                     },
                                     "then": {
                                         "properties": {
-                                            "targetField": { "type": "string" }
+                                            "targetField": {
+                                                "type": "string"
+                                            }
                                         }
                                     }
                                 },
                                 {
                                     "if": {
                                         "properties": {
-                                            "type": { "const": "relation" }
+                                            "type": {
+                                                "const": "relation"
+                                            }
                                         },
-                                        "required": ["type"]
+                                        "required": [
+                                            "type"
+                                        ]
                                     },
                                     "then": {
                                         "required": [
@@ -405,10 +545,26 @@
                                     "else": {
                                         "not": {
                                             "anyOf": [
-                                                { "required": ["relation"] },
-                                                { "required": ["target"] },
-                                                { "required": ["inversedBy"] },
-                                                { "required": ["mappedBy"] }
+                                                {
+                                                    "required": [
+                                                        "relation"
+                                                    ]
+                                                },
+                                                {
+                                                    "required": [
+                                                        "target"
+                                                    ]
+                                                },
+                                                {
+                                                    "required": [
+                                                        "inversedBy"
+                                                    ]
+                                                },
+                                                {
+                                                    "required": [
+                                                        "mappedBy"
+                                                    ]
+                                                }
                                             ]
                                         }
                                     }
@@ -416,31 +572,45 @@
                                 {
                                     "if": {
                                         "properties": {
-                                            "type": { "const": "component" }
+                                            "type": {
+                                                "const": "component"
+                                            }
                                         },
-                                        "required": ["type"]
+                                        "required": [
+                                            "type"
+                                        ]
                                     },
                                     "then": {
-                                        "required": ["component"],
+                                        "required": [
+                                            "component"
+                                        ],
                                         "properties": {
                                             "component": {
                                                 "type": "string",
                                                 "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
                                                 "description": "Component UID: <category>.<component>"
                                             },
-                                            "repeatable": { "type": "boolean" }
+                                            "repeatable": {
+                                                "type": "boolean"
+                                            }
                                         }
                                     }
                                 },
                                 {
                                     "if": {
                                         "properties": {
-                                            "type": { "const": "dynamiczone" }
+                                            "type": {
+                                                "const": "dynamiczone"
+                                            }
                                         },
-                                        "required": ["type"]
+                                        "required": [
+                                            "type"
+                                        ]
                                     },
                                     "then": {
-                                        "required": ["components"],
+                                        "required": [
+                                            "components"
+                                        ],
                                         "properties": {
                                             "components": {
                                                 "type": "array",
@@ -463,12 +633,18 @@
                                                 ]
                                             }
                                         },
-                                        "required": ["type"]
+                                        "required": [
+                                            "type"
+                                        ]
                                     },
                                     "then": {
                                         "properties": {
-                                            "min": { "type": "integer" },
-                                            "max": { "type": "integer" }
+                                            "min": {
+                                                "type": "integer"
+                                            },
+                                            "max": {
+                                                "type": "integer"
+                                            }
                                         }
                                     }
                                 },
@@ -476,15 +652,24 @@
                                     "if": {
                                         "properties": {
                                             "type": {
-                                                "enum": ["float", "decimal"]
+                                                "enum": [
+                                                    "float",
+                                                    "decimal"
+                                                ]
                                             }
                                         },
-                                        "required": ["type"]
+                                        "required": [
+                                            "type"
+                                        ]
                                     },
                                     "then": {
                                         "properties": {
-                                            "min": { "type": "number" },
-                                            "max": { "type": "number" }
+                                            "min": {
+                                                "type": "number"
+                                            },
+                                            "max": {
+                                                "type": "number"
+                                            }
                                         }
                                     }
                                 },
@@ -502,7 +687,9 @@
                                                 ]
                                             }
                                         },
-                                        "required": ["type"]
+                                        "required": [
+                                            "type"
+                                        ]
                                     },
                                     "then": {
                                         "properties": {
@@ -514,7 +701,9 @@
                                                 "type": "integer",
                                                 "minimum": 0
                                             },
-                                            "regex": { "type": "string" }
+                                            "regex": {
+                                                "type": "string"
+                                            }
                                         }
                                     }
                                 },
@@ -532,13 +721,23 @@
                                                 }
                                             }
                                         },
-                                        "required": ["type"]
+                                        "required": [
+                                            "type"
+                                        ]
                                     },
                                     "then": {
                                         "not": {
                                             "anyOf": [
-                                                { "required": ["min"] },
-                                                { "required": ["max"] }
+                                                {
+                                                    "required": [
+                                                        "min"
+                                                    ]
+                                                },
+                                                {
+                                                    "required": [
+                                                        "max"
+                                                    ]
+                                                }
                                             ]
                                         }
                                     }
@@ -546,12 +745,19 @@
                                 {
                                     "if": {
                                         "properties": {
-                                            "computed": { "const": true }
+                                            "computed": {
+                                                "const": true
+                                            }
                                         },
-                                        "required": ["computed"]
+                                        "required": [
+                                            "computed"
+                                        ]
                                     },
                                     "then": {
-                                        "required": ["depends", "compute"],
+                                        "required": [
+                                            "depends",
+                                            "compute"
+                                        ],
                                         "properties": {
                                             "depends": {
                                                 "type": "array",
@@ -565,18 +771,14 @@
                                     }
                                 }
                             ],
-
                             "additionalProperties": true
                         }
                     },
-
                     "additionalProperties": true
                 }
             },
-
             "additionalProperties": true
         }
     },
-
     "additionalProperties": false
 }

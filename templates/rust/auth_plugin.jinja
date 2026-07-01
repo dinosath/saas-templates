@@ -162,8 +162,11 @@ impl Plugin for AuthPlugin {
 // ─── Axum init ────────────────────────────────────────────────────────────────
 
 /// Initialise the global authentication state. Call once at startup before
-/// serving requests.
+/// serving requests.  Safe to call more than once — subsequent calls are no-ops.
 pub async fn init_auth() {
+    if AUTH_STATE.get().is_some() {
+        return;
+    }
     init_auth_state().await;
 }
 {% endif -%}

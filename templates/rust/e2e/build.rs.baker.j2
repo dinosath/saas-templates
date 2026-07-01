@@ -1,14 +1,16 @@
 {% if 'grpc' in protocols %}
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() {
     let manifest_dir = std::path::PathBuf::from(
         std::env::var("CARGO_MANIFEST_DIR").unwrap(),
     );
-    tonic_prost_build::configure()
-        .compile_protos(
-            &[manifest_dir.join("../proto/{{ project_name | snake_case }}.proto")],
-            &[manifest_dir.join("../proto")],
-        )?;
-    Ok(())
+    let out_dir = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    grpc_protobuf_build::CodeGen::new()
+        .output_dir(&out_dir)
+        .input("{{ project_name | snake_case }}.proto")
+        .include(manifest_dir.join("../proto"))
+        .client_only()
+        .compile()
+        .unwrap();
 }
 {% else %}
 fn main() {}
