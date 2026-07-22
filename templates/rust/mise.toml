@@ -55,6 +55,16 @@ description = "Generate and build axum+diesel+jwt+shadcn sample"
 env.ANSWER = "axum-diesel"
 run = [{ task = "generate"},{ task = "e2e" }]
 
+[tasks.axum-toasty]
+description = "Generate and build axum+toasty+rest sample"
+env.ANSWER = "axum-toasty"
+run = [{ task = "generate"},{ task = "e2e" }]
+
+[tasks.topcoat-toasty]
+description = "Generate and build axum+toasty+topcoat frontend sample"
+env.ANSWER = "topcoat-toasty"
+run = [{ task = "generate"},{ task = "e2e-frontend" }]
+
 [tasks.all]
 description = "Generate and build all samples (sequential to avoid OOM)"
 run = [
@@ -64,6 +74,8 @@ run = [
     { task = "rest-leptos" },
     { task = "grpc" },
     { task = "rest-rls" },
+    { task = "axum-toasty" },
+    { task = "topcoat-toasty" },
 ]
 
 [tasks.clippy]

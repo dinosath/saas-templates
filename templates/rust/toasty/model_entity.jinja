@@ -1,0 +1,110 @@
+{% import "macros.jinja" as macros-%}
+{% import "rust/types.jinja" as rust_types-%}
+use toasty::prelude::*;
+use serde::{Deserialize, Serialize};
+{% if 'rest' in protocols -%}
+use validator::Validate;
+{% endif -%}
+
+{# Enum types generated from entity attributes that have enum values. #}
+{% for name,property in entity.attributes | items | selectattr('1.enum') -%}
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum {{ entity_name | pascal_case }}{{ name | pascal_case }} {
+    {% for enum in property.enum -%}
+    {{ '#[default]' if (property.default and enum == property.default) or (not property.default and loop.first) }}
+    #[serde(rename = "{{ enum }}")]
+    {{ rust_types.rust_var(enum,true) }}{%- if not loop.last -%},{% endif %}
+    {% endfor %}
+}
+
+{% endfor %}
+
+#[derive(Debug, Clone, Serialize, Deserialize, toasty::Model)]
+#[toasty(table = "{{ entity_name | table_case }}")]
+pub struct {{ entity_name | pascal_case }} {
+    #[key]
+    #[auto]
+    pub id: {{ rust_types.rust_id_type(id_type) }},
+
+    {% if macros.entity_has_rls(entity, row_level_security)|trim == 'true' -%}
+    pub tenant_id: String,
+    {% endif -%}
+
+    {% for name, property in entity.attributes | items -%}
+    {%- set col_name = rust_types.rust_var(name, false) -%}
+    {%- set field_name = col_name if col_name != (entity_name | table_case) else '_' ~ col_name -%}
+
+    {%- if property.unique -%}
+    #[unique]
+    {% endif -%}
+
+    {%- if macros.relation_is_many_to_many(property)=='true' or macros.relation_is_one_to_many(property)=='true' -%}
+    #[has_many]
+    {%- if macros.relation_is_many_to_many(property)=='true' %}
+    pub {{ field_name }}: toasty::Deferred<Vec<{{ property.target | pascal_case }}>>,
+    {%- else %}
+    pub {{ field_name }}: toasty::Deferred<Vec<{{ property.target | pascal_case }}>>,
+    {%- endif -%}
+
+    {%- elif macros.relation_is_many_to_one(property)=='true' or macros.relation_is_one_to_one(property)=='true' -%}
+    #[index]
+    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
+    {% endif -%}
+    pub {{ name | snake_case }}_id: {% if not property.required %}Option<{% endif %}{{ rust_types.rust_id_type(id_type) }}{% if not property.required %}>{% endif %},
+
+    #[belongs_to({{ property.target | pascal_case }})]
+    pub {{ field_name }}: toasty::Deferred<{{ property.target | pascal_case }}>,
+
+    {%- elif property.type == 'enumeration' -%}
+    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
+    {% endif -%}
+    pub {{ field_name }}: {% if not property.required %}Option<{% endif %}{{ entity_name | pascal_case }}{{ name | pascal_case }}{% if not property.required %}>{% endif %},
+
+    {%- elif property.type == 'boolean' -%}
+    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
+    {% endif -%}
+    pub {{ field_name }}: {% if not property.required and not property.default is defined %}Option<{% endif %}bool{% if not property.required and not property.default is defined %}>{% endif %},
+
+    {%- elif property.type == 'string' or property.type == 'text' or property.type == 'email' or property.type == 'url' or property.type == 'uid' -%}
+    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
+    {% endif -%}
+    pub {{ field_name }}: {% if not property.required %}Option<{% endif %}String{% if not property.required %}>{% endif %},
+
+    {%- elif property.type == 'integer' or property.type == 'biginteger' -%}
+    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
+    {% endif -%}
+    pub {{ field_name }}: {% if not property.required and not property.default is defined %}Option<{% endif %}{{ rust_types.get_rust_primitive(name, property) }}{% if not property.required and not property.default is defined %}>{% endif %},
+
+    {%- elif property.type == 'number' or property.type == 'decimal' or property.type == 'float' -%}
+    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
+    {% endif -%}
+    pub {{ field_name }}: {% if not property.required %}Option<{% endif %}{{ rust_types.get_rust_primitive(name, property) }}{% if not property.required %}>{% endif %},
+
+    {%- elif property.type == 'datetime' or property.type == 'timestamp' -%}
+    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
+    {% endif -%}
+    pub {{ field_name }}: {% if not property.required %}Option<{% endif %}chrono::NaiveDateTime{% if not property.required %}>{% endif %},
+
+    {%- elif property.type == 'date' -%}
+    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
+    {% endif -%}
+    pub {{ field_name }}: {% if not property.required %}Option<{% endif %}chrono::NaiveDate{% if not property.required %}>{% endif %},
+
+    {%- elif property.type == 'time' -%}
+    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
+    {% endif -%}
+    pub {{ field_name }}: {% if not property.required %}Option<{% endif %}chrono::NaiveTime{% if not property.required %}>{% endif %},
+
+    {%- elif property.type == 'json' -%}
+    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
+    {% endif -%}
+    pub {{ field_name }}: {% if not property.required %}Option<{% endif %}serde_json::Value{% if not property.required %}>{% endif %},
+
+    {%- else -%}
+    {% if field_name != col_name %}#[serde(rename = "{{ col_name }}")]
+    {% endif -%}
+    pub {{ field_name }}: {% if not property.required %}Option<{% endif %}String{% if not property.required %}>{% endif %},
+
+    {%- endif -%}
+    {% endfor %}
+}

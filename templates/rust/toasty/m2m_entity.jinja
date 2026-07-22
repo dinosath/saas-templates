@@ -1,0 +1,22 @@
+{% import "rust/types.jinja" as rust_types -%}
+{% set left = relation | split("_") | first -%}
+{% set right = relation | split("_") | last -%}
+{% set file_name = relation | snake_case %}
+use toasty::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize, toasty::Model)]
+#[toasty(table = "{{ file_name }}")]
+pub struct {{ left | pascal_case }}{{ right | pascal_case }} {
+    #[index]
+    pub {{ left | snake_case }}_id: {{ rust_types.rust_id_type(id_type) }},
+
+    #[index]
+    pub {{ right | snake_case }}_id: {{ rust_types.rust_id_type(id_type) }},
+
+    #[belongs_to({{ left | pascal_case }})]
+    pub {{ left | snake_case }}: toasty::Deferred<{{ left | pascal_case }}>,
+
+    #[belongs_to({{ right | pascal_case }})]
+    pub {{ right | snake_case }}: toasty::Deferred<{{ right | pascal_case }}>,
+}

@@ -3,5 +3,7 @@
 {% include "rust/sea-orm/m2m_entity.jinja" %}
 {%- elif orm == 'diesel' -%}
 {% include "rust/diesel/m2m_entity.jinja" %}
+{%- elif orm == 'toasty' -%}
+{% include "rust/toasty/m2m_entity.jinja" %}
 {%- endif %}
 {%- endif %}

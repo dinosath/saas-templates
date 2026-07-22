@@ -2,4 +2,6 @@
 {% include "rust/sea-orm/model_entity.jinja" %}
 {%- elif orm == 'diesel' -%}
 {% include "rust/diesel/model_entity.jinja" %}
+{%- elif orm == 'toasty' -%}
+{% include "rust/toasty/model_entity.jinja" %}
 {%- endif %}

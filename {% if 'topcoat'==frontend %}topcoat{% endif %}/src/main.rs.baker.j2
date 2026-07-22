@@ -1,0 +1,20 @@
+use topcoat::prelude::*;
+
+mod components;
+mod pages;
+
+#[tokio::main]
+async fn main() -> Result<(), anyhow::Error> {
+    {% if 'open-telemetry' in features -%}
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
+    {% endif %}
+
+    let router = Router::builder()
+        .discover()
+        .build()?;
+
+    topcoat::start(router).await?;
+    Ok(())
+}

@@ -17,7 +17,11 @@ overflow-checks = false
 
 [workspace]
 exclude = ["e2e"]
-{{ 'members = ["migration"]' if add_migrations and orm == "seaorm" }}
+{% set members = [] %}
+{% if add_migrations and orm == "seaorm" %}{% set members = members + ['"migration"'] %}{% endif %}
+{% if frontend == 'topcoat' %}{% set members = members + ['"topcoat"'] %}{% endif %}
+{{ 'members = [' + members | join(', ') + ']' if members | length > 0 }}
+
 
 {% if orm == "seaorm" -%}
 [workspace.dependencies]
@@ -49,6 +53,10 @@ diesel-derive-enum = { version = "2", features = ["postgres"] }
 {% if add_migrations -%}
 diesel_migrations = { version = "2", features = ["postgres"] }
 {% endif -%}
+{% endif -%}
+{% if orm == 'toasty' and database=='postgres' -%}
+toasty = { version = "0.8", features = ["postgres"] }
+toasty-core = { version = "0.8", features = ["postgres"] }
 {% endif -%}
 {{ 'static-serve = "0.6"' if frontend != 'none' }}
 {% if row_level_security -%}

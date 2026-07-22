@@ -1,0 +1,22 @@
+use topcoat::prelude::*;
+use crate::components::layout;
+
+#[page("/")]
+pub async fn home() -> Result {
+    view! {
+        layout::layout(title: "Home") {
+            <div class="flex flex-col items-center justify-center py-16">
+                <h1 class="mb-4 text-4xl font-bold tracking-tight text-gray-900">"Welcome to {{ project_name }}"</h1>
+                <p class="mb-8 max-w-2xl text-center text-lg text-gray-600">"A full-stack SaaS application built with Topcoat."</p>
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {% for entity_name, entity in entities | items | selectattr("1.attributes") %}
+                    <a href="/{{ entity_name | snake_case }}" class="block rounded-xl border bg-white p-6 shadow-sm transition hover:shadow-md">
+                        <h2 class="mb-2 text-lg font-semibold text-gray-900">{{ entity.info.displayName | default(entity_name) }}</h2>
+                        <p class="text-sm text-gray-500">{{ entity.info.description | default('Manage ' ~ entity_name ~ ' records') }}</p>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        }
+    }
+}

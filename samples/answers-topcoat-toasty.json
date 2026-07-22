@@ -1,0 +1,109 @@
+{
+    "project_name": "sample_topcoat_toasty",
+    "backend": "axum",
+    "orm": "toasty",
+    "authentication": "none",
+    "database": "postgres",
+    "row_level_security": false,
+    "security_level": "standard",
+    "add_migrations": false,
+    "features": ["open-telemetry"],
+    "protocols": ["rest"],
+    "frontend": "topcoat",
+    "entities": {
+        "Author": {
+            "kind": "collectionType",
+            "collectionName": "authors",
+            "priority": 1,
+            "info": {
+                "displayName": "Author",
+                "singularName": "author",
+                "pluralName": "authors",
+                "description": "Content authors"
+            },
+            "attributes": {
+                "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 100
+                },
+                "email": {
+                    "type": "string",
+                    "required": true,
+                    "unique": true,
+                    "format": "email",
+                    "maxLength": 255
+                },
+                "bio": {
+                    "type": "text",
+                    "required": false
+                }
+            }
+        },
+        "Category": {
+            "kind": "collectionType",
+            "collectionName": "categories",
+            "priority": 2,
+            "info": {
+                "displayName": "Category",
+                "singularName": "category",
+                "pluralName": "categories",
+                "description": "Categories for organizing articles"
+            },
+            "attributes": {
+                "name": {
+                    "type": "string",
+                    "required": true,
+                    "unique": true,
+                    "maxLength": 100
+                },
+                "description": {
+                    "type": "text",
+                    "required": false
+                }
+            }
+        },
+        "Article": {
+            "kind": "collectionType",
+            "collectionName": "articles",
+            "priority": 3,
+            "info": {
+                "displayName": "Article",
+                "singularName": "article",
+                "pluralName": "articles",
+                "description": "Blog articles"
+            },
+            "attributes": {
+                "title": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                },
+                "content": {
+                    "type": "text",
+                    "required": true
+                },
+                "status": {
+                    "type": "enumeration",
+                    "required": true,
+                    "enum": ["draft", "published", "archived"],
+                    "default": "draft"
+                },
+                "category": {
+                    "type": "relation",
+                    "relation": "manyToOne",
+                    "target": "Category",
+                    "required": true,
+                    "mappedBy": "article"
+                },
+                "author": {
+                    "type": "relation",
+                    "relation": "manyToOne",
+                    "target": "Author",
+                    "required": true,
+                    "mappedBy": "article"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,4 @@
+pub mod home;
+{% for entity_name, entity in entities | items | selectattr("1.attributes") %}
+pub mod {{ entity_name | snake_case }};
+{% endfor %}

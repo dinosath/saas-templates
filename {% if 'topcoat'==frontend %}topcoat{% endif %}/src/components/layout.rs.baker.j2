@@ -1,0 +1,35 @@
+use topcoat::prelude::*;
+
+#[component]
+pub async fn layout(title: &str, children: Children) -> Result {
+    view! {
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>(title) " - {{ project_name }}"</title>
+                <script src="https://cdn.tailwindcss.com"></script>
+                {topcoat::dev::script()}
+            </head>
+            <body class="min-h-screen bg-gray-50 font-sans antialiased">
+                <header class="border-b bg-white shadow-sm">
+                    <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+                        <a href="/" class="text-xl font-bold text-gray-900">"{{ project_name }}"</a>
+                        <div class="flex items-center gap-6">
+                            {% for entity_name, entity in entities | items | selectattr("1.attributes") %}
+                            <a href="/{{ entity_name | snake_case }}" class="text-sm text-gray-600 hover:text-gray-900">{{ entity.info.displayName | default(entity_name) }}</a>
+                            {% endfor %}
+                        </div>
+                    </nav>
+                </header>
+                <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                    {children}
+                </main>
+                <footer class="border-t bg-white py-6 text-center text-sm text-gray-500">
+                    <p>"{{ project_name }} — powered by Topcoat &amp; Toasty"</p>
+                </footer>
+            </body>
+        </html>
+    }
+}

@@ -1,0 +1,79 @@
+{
+    "project_name": "sample_axum_toasty",
+    "backend": "axum",
+    "orm": "toasty",
+    "authentication": "jwt",
+    "database": "postgres",
+    "row_level_security": false,
+    "security_level": "standard",
+    "add_migrations": false,
+    "features": ["open-telemetry"],
+    "protocols": ["rest"],
+    "frontend": "none",
+    "entities": {
+        "Author": {
+            "kind": "collectionType",
+            "collectionName": "authors",
+            "priority": 1,
+            "info": {
+                "displayName": "Author",
+                "singularName": "author",
+                "pluralName": "authors",
+                "description": "Content authors"
+            },
+            "attributes": {
+                "name": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 100
+                },
+                "email": {
+                    "type": "string",
+                    "required": true,
+                    "unique": true,
+                    "format": "email",
+                    "maxLength": 255
+                },
+                "bio": {
+                    "type": "text",
+                    "required": false
+                }
+            }
+        },
+        "Article": {
+            "kind": "collectionType",
+            "collectionName": "articles",
+            "priority": 2,
+            "info": {
+                "displayName": "Article",
+                "singularName": "article",
+                "pluralName": "articles",
+                "description": "Blog articles"
+            },
+            "attributes": {
+                "title": {
+                    "type": "string",
+                    "required": true,
+                    "maxLength": 255
+                },
+                "content": {
+                    "type": "text",
+                    "required": true
+                },
+                "status": {
+                    "type": "enumeration",
+                    "required": true,
+                    "enum": ["draft", "published", "archived"],
+                    "default": "draft"
+                },
+                "author": {
+                    "type": "relation",
+                    "relation": "manyToOne",
+                    "target": "Author",
+                    "required": true,
+                    "mappedBy": "article"
+                }
+            }
+        }
+    }
+}

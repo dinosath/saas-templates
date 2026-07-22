@@ -1,0 +1,26 @@
+[package]
+name = "{{project_name}}-topcoat"
+version = "{{project_version}}"
+edition = "{{project_edition}}"
+publish = false
+
+[workspace]
+
+[[bin]]
+name = "{{ project_name | snake_case }}_topcoat"
+path = "src/main.rs"
+
+[dependencies]
+topcoat = "0.1"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+{% if orm == 'toasty' %}
+toasty = { version = "0.8", features = ["postgres"] }
+toasty-core = { version = "0.8", features = ["postgres"] }
+{% endif %}
+{% if 'open-telemetry' in features %}
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+{% endif %}
