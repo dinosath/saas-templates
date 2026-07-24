@@ -8,7 +8,7 @@ use summer_web::{
     extractor::{Path, Component, Json, Query},
     axum::{http::{HeaderMap, HeaderValue, StatusCode}, response::IntoResponse},
 };
-use sea_orm::{ActiveModelTrait, ModelTrait, EntityTrait, Set, IntoActiveModel, ConnectionTrait, TransactionTrait, ColumnTrait, QueryFilter, PaginatorTrait, QuerySelect};
+use sea_orm::{ActiveModelTrait, EntityTrait, Set, IntoActiveModel, ConnectionTrait, TransactionTrait, ColumnTrait, QueryFilter, PaginatorTrait, QuerySelect};
 use summer_sea_orm::DbConn;
 use summer::tracing::debug;
 use serde::{Deserialize, Serialize};
@@ -174,14 +174,14 @@ pub async fn remove(Component(db): Component<DbConn>, Path(id): Path<i32>{% if a
     set_tenant(&txn, &tenant).await
         .map_err(|e| summer_web::error::KnownWebError::internal_server_error(e.to_string()))?;
     let model = load_item(&txn, id).await?;
-    model.delete(&txn)
+    model.into_active_model().delete(&txn)
         .await
         .map_err(|e| summer_web::error::KnownWebError::internal_server_error(e.to_string()))?;
     txn.commit().await
         .map_err(|e| summer_web::error::KnownWebError::internal_server_error(e.to_string()))?;
     {% else -%}
     let model = load_item(&db, id).await?;
-    model.delete(&db)
+    model.into_active_model().delete(&db)
         .await
         .map_err(|e| summer_web::error::KnownWebError::internal_server_error(e.to_string()))?;
     {% endif -%}

@@ -315,6 +315,13 @@ fn next_suffix() -> String {
     format!("{n}")
 }
 
+fn id_of(v: &serde_json::Value) -> i64 {
+    v["id"]
+        .as_i64()
+        .or_else(|| v["id"].as_str().and_then(|s| s.parse().ok()))
+        .expect("response missing 'id'")
+}
+
 // ============================================================================
 // Per-entity setup helpers (create entity + any required FK dependencies)
 // ============================================================================
@@ -328,7 +335,7 @@ async fn create_test_{{ entity_snake }}(i: &TestInfra) -> serde_json::Value {
     let suffix = next_suffix();
 {% for attr_name, attr_prop in entity.attributes | items -%}
 {% if macros.relation_has_fk(attr_prop)|trim == 'true' -%}
-{% set fk_target = attr_prop.target | replace("-","_") -%}
+{% set fk_target = attr_prop.target | replace("-","_") | snake_case -%}
 {% if fk_target != entity_snake -%}
 {% set back_ref = namespace(found=false) -%}
 {% for te_name, te_data in entities | items -%}{% if te_name | snake_case == fk_target -%}{% for ta_name, ta_prop in te_data.attributes | items -%}{% if macros.relation_has_fk(ta_prop)|trim == 'true' and ta_prop.target | replace("-","_") == entity_snake -%}{% set back_ref.found = true -%}{% endif -%}{% endfor -%}{% endif -%}{% endfor -%}
@@ -342,7 +349,7 @@ async fn create_test_{{ entity_snake }}(i: &TestInfra) -> serde_json::Value {
     let payload = json!({
 {% for attr_name, attr_prop in entity.attributes | items -%}
 {% if macros.relation_has_fk(attr_prop)|trim == 'true' -%}
-{% set fk_target = attr_prop.target | replace("-","_") -%}
+{% set fk_target = attr_prop.target | replace("-","_") | snake_case -%}
 {% if fk_target != entity_snake -%}
 {% set back_ref = namespace(found=false) -%}
 {% for te_name, te_data in entities | items -%}{% if te_name | snake_case == fk_target -%}{% for ta_name, ta_prop in te_data.attributes | items -%}{% if macros.relation_has_fk(ta_prop)|trim == 'true' and ta_prop.target | replace("-","_") == entity_snake -%}{% set back_ref.found = true -%}{% endif -%}{% endfor -%}{% endif -%}{% endfor -%}
@@ -546,6 +553,223 @@ mod {{ entity_snake }}_tests {
 {% endif -%}
             let get_response = get_request.await;
             assert_eq!(get_response.status_code().as_u16(), 404);
+        });
+    }
+
+    #[test]
+    fn test_batch_create_{{ entity_plural | replace("-", "_") }}() {
+        let i = infra();
+        shared_runtime().block_on(async {
+            let suffix = next_suffix();
+            let item1 = json!({
+{% for attr_name, attr_prop in entity.attributes | items -%}
+{% if macros.relation_has_fk(attr_prop)|trim == 'true' -%}
+{% set fk_target = attr_prop.target | replace("-","_") | snake_case -%}
+{% if fk_target != entity_snake -%}
+                "{{ attr_name | snake_case }}_id": id_of(&create_test_{{ fk_target }}(i).await),
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+{% for attr_name, attr_prop in entity.attributes | items -%}
+{% if not attr_prop.readOnly and attr_prop.type != 'relation' -%}
+{% if attr_prop.type == 'string' -%}
+{% if attr_prop.format == 'email' -%}
+                "{{ attr_name | snake_case }}": format!("batch_a_{}@example.com", suffix),
+{% elif attr_prop.maxLength is defined and attr_prop.maxLength <= 10 -%}
+                "{{ attr_name | snake_case }}": format!("{:.*}", {{ attr_prop.maxLength }}, format!("b{}", suffix)),
+{% else -%}
+                "{{ attr_name | snake_case }}": format!("Batch A {}", suffix),
+{% endif -%}
+{% elif attr_prop.type == 'integer' -%}
+                "{{ attr_name | snake_case }}": {{ attr_prop.default | default(1) }},
+{% elif attr_prop.type == 'number' or attr_prop.type == 'decimal' or attr_prop.type == 'float' -%}
+                "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
+{% elif attr_prop.type == 'boolean' -%}
+                "{{ attr_name | snake_case }}": {{ attr_prop.default | default('false') | lower }},
+{% elif attr_prop.type == 'date' -%}
+                "{{ attr_name | snake_case }}": "2024-01-15",
+{% elif attr_prop.type == 'datetime' or attr_prop.type == 'timestamp' -%}
+                "{{ attr_name | snake_case }}": "2024-01-15T00:00:00",
+{% elif attr_prop.type == 'time' -%}
+                "{{ attr_name | snake_case }}": "12:00:00",
+{% elif attr_prop.type == 'text' -%}
+                "{{ attr_name | snake_case }}": format!("Batch A content {}", suffix),
+{% elif attr_prop.type == 'enumeration' or attr_prop.enum -%}
+                "{{ attr_name | snake_case }}": "{{ attr_prop.enum[0] | default('default') }}",
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+            });
+            let item2 = json!({
+{% for attr_name, attr_prop in entity.attributes | items -%}
+{% if macros.relation_has_fk(attr_prop)|trim == 'true' -%}
+{% set fk_target = attr_prop.target | replace("-","_") | snake_case -%}
+{% if fk_target != entity_snake -%}
+                "{{ attr_name | snake_case }}_id": id_of(&create_test_{{ fk_target }}(i).await),
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+{% for attr_name, attr_prop in entity.attributes | items -%}
+{% if not attr_prop.readOnly and attr_prop.type != 'relation' -%}
+{% if attr_prop.type == 'string' -%}
+{% if attr_prop.format == 'email' -%}
+                "{{ attr_name | snake_case }}": format!("batch_b_{}@example.com", suffix),
+{% elif attr_prop.maxLength is defined and attr_prop.maxLength <= 10 -%}
+                "{{ attr_name | snake_case }}": format!("{:.*}", {{ attr_prop.maxLength }}, format!("c{}", suffix)),
+{% else -%}
+                "{{ attr_name | snake_case }}": format!("Batch B {}", suffix),
+{% endif -%}
+{% elif attr_prop.type == 'integer' -%}
+                "{{ attr_name | snake_case }}": {{ attr_prop.default | default(2) }},
+{% elif attr_prop.type == 'number' or attr_prop.type == 'decimal' or attr_prop.type == 'float' -%}
+                "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
+{% elif attr_prop.type == 'boolean' -%}
+                "{{ attr_name | snake_case }}": true,
+{% elif attr_prop.type == 'date' -%}
+                "{{ attr_name | snake_case }}": "2024-06-15",
+{% elif attr_prop.type == 'datetime' or attr_prop.type == 'timestamp' -%}
+                "{{ attr_name | snake_case }}": "2024-06-15T00:00:00",
+{% elif attr_prop.type == 'time' -%}
+                "{{ attr_name | snake_case }}": "18:00:00",
+{% elif attr_prop.type == 'text' -%}
+                "{{ attr_name | snake_case }}": format!("Batch B content {}", suffix),
+{% elif attr_prop.type == 'enumeration' or attr_prop.enum -%}
+{% if attr_prop.enum | length > 1 -%}
+                "{{ attr_name | snake_case }}": "{{ attr_prop.enum[1] }}",
+{% else -%}
+                "{{ attr_name | snake_case }}": "{{ attr_prop.enum[0] | default('default') }}",
+{% endif -%}
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+            });
+            let batch_body = json!([item1, item2]);
+            let mut request = i.server.post("/api/{{ entity_plural }}/batch").json(&batch_body);
+{% if authentication != 'none' -%}
+            request = request.add_header("Authorization", format!("Bearer {}", i.auth_token));
+{% endif -%}
+{% if entity_rls -%}
+            request = request.add_header("X-Tenant-Id", "test-tenant-a");
+{% endif -%}
+            let response = request.await;
+            assert!(
+                response.status_code().is_success(),
+                "Batch create {{ entity_plural }} failed: status={}, body={:?}",
+                response.status_code(), response.text()
+            );
+            let created: Vec<serde_json::Value> = response.json();
+            assert_eq!(created.len(), 2, "expected 2 created items, got {}", created.len());
+            for item in &created {
+                assert!(item["id"].is_number() || item["id"].is_string(), "batch-created item missing id");
+            }
+        });
+    }
+
+    #[test]
+    fn test_batch_update_{{ entity_plural | replace("-", "_") }}() {
+        let i = infra();
+        shared_runtime().block_on(async {
+            let a = create_test_{{ entity_snake }}(i).await;
+            let b = create_test_{{ entity_snake }}(i).await;
+            let id_a = id_of(&a);
+            let id_b = id_of(&b);
+            let suffix = next_suffix();
+            let batch_body = json!([
+                {
+                    "id": id_a,
+{% for attr_name, attr_prop in entity.attributes | items -%}
+{% if not attr_prop.readOnly and attr_prop.type != 'relation' and not macros.relation_has_fk(attr_prop) -%}
+{% if attr_prop.type == 'string' -%}
+                    "{{ attr_name | snake_case }}": format!("Batch Upd A {}", suffix),
+{% elif attr_prop.type == 'boolean' -%}
+                    "{{ attr_name | snake_case }}": true,
+{% elif attr_prop.type == 'enumeration' or attr_prop.enum -%}
+{% if attr_prop.enum | length > 1 -%}
+                    "{{ attr_name | snake_case }}": "{{ attr_prop.enum[1] }}",
+{% else -%}
+                    "{{ attr_name | snake_case }}": "{{ attr_prop.enum[0] | default('default') }}",
+{% endif -%}
+{% elif attr_prop.type == 'text' -%}
+                    "{{ attr_name | snake_case }}": format!("Batch Upd A content {}", suffix),
+{% else -%}
+                    "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0) }},
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+                },
+                {
+                    "id": id_b,
+{% for attr_name, attr_prop in entity.attributes | items -%}
+{% if not attr_prop.readOnly and attr_prop.type != 'relation' and not macros.relation_has_fk(attr_prop) -%}
+{% if attr_prop.type == 'string' -%}
+                    "{{ attr_name | snake_case }}": format!("Batch Upd B {}", suffix),
+{% elif attr_prop.type == 'boolean' -%}
+                    "{{ attr_name | snake_case }}": false,
+{% elif attr_prop.type == 'enumeration' or attr_prop.enum -%}
+                    "{{ attr_name | snake_case }}": "{{ attr_prop.enum[0] | default('default') }}",
+{% elif attr_prop.type == 'text' -%}
+                    "{{ attr_name | snake_case }}": format!("Batch Upd B content {}", suffix),
+{% else -%}
+                    "{{ attr_name | snake_case }}": {{ attr_prop.default | default(1) }},
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+                }
+            ]);
+            let mut request = i.server.put("/api/{{ entity_plural }}/batch").json(&batch_body);
+{% if authentication != 'none' -%}
+            request = request.add_header("Authorization", format!("Bearer {}", i.auth_token));
+{% endif -%}
+{% if entity_rls -%}
+            request = request.add_header("X-Tenant-Id", "test-tenant-a");
+{% endif -%}
+            let response = request.await;
+            assert!(
+                response.status_code().is_success(),
+                "Batch update {{ entity_plural }} failed: status={}, body={:?}",
+                response.status_code(), response.text()
+            );
+        });
+    }
+
+    #[test]
+    fn test_batch_delete_{{ entity_plural | replace("-", "_") }}() {
+        let i = infra();
+        shared_runtime().block_on(async {
+            let a = create_test_{{ entity_snake }}(i).await;
+            let b = create_test_{{ entity_snake }}(i).await;
+            let id_a = id_of(&a);
+            let id_b = id_of(&b);
+
+            let mut request = i.server
+                .delete("/api/{{ entity_plural }}/batch")
+                .json(&json!([id_a, id_b]));
+{% if authentication != 'none' -%}
+            request = request.add_header("Authorization", format!("Bearer {}", i.auth_token));
+{% endif -%}
+{% if entity_rls -%}
+            request = request.add_header("X-Tenant-Id", "test-tenant-a");
+{% endif -%}
+            let response = request.await;
+            assert!(
+                response.status_code().is_success() || response.status_code().as_u16() == 204,
+                "Batch delete {{ entity_plural }} failed: status={}, body={:?}",
+                response.status_code(), response.text()
+            );
+
+            // Verify both are deleted
+            for &id in &[id_a, id_b] {
+                let mut get_request = i.server.get(&format!("/api/{{ entity_plural }}/{}", id));
+{% if authentication != 'none' -%}
+                get_request = get_request.add_header("Authorization", format!("Bearer {}", i.auth_token));
+{% endif -%}
+{% if entity_rls -%}
+                get_request = get_request.add_header("X-Tenant-Id", "test-tenant-a");
+{% endif -%}
+                let get_response = get_request.await;
+                assert_eq!(get_response.status_code().as_u16(), 404,
+                    "batch-deleted item {} still accessible", id);
+            }
         });
     }
 }

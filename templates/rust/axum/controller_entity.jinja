@@ -14,7 +14,7 @@
   {%- endif -%}
 {%- endfor -%}
 {% if orm == 'seaorm' -%}
-use sea_orm::{ActiveModelTrait, ModelTrait, EntityTrait, Set, IntoActiveModel, ConnectionTrait, TransactionTrait, ColumnTrait, QueryFilter, PaginatorTrait, QuerySelect};
+use sea_orm::{ActiveModelTrait, EntityTrait, Set, IntoActiveModel, ConnectionTrait, TransactionTrait, ColumnTrait, QueryFilter, PaginatorTrait, QuerySelect};
 {% elif orm == 'diesel' -%}
 use diesel::prelude::*;
 {% endif -%}
@@ -306,13 +306,13 @@ pub async fn remove(State(state): State<AppState>, Path(item_id): Path<i32>{% if
     set_tenant(&txn, &tenant).await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": e.to_string()}))))?;
     let model = load_item(&txn, item_id).await?;
-    model.delete(&txn).await
+    model.into_active_model().delete(&txn).await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": e.to_string()}))))?;
     txn.commit().await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": e.to_string()}))))?;
     {% else -%}
     let model = load_item(&state.db, item_id).await?;
-    model.delete(&state.db).await
+    model.into_active_model().delete(&state.db).await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": e.to_string()}))))?;
     {% endif -%}
     {% elif orm == 'diesel' -%}

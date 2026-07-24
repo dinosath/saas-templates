@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [rest, rest-shadcn, rest-jwt, grpc]
+        variant: [rest, rest-jwt, rest-shadcn, rest-leptos, grpc, rest-rls, axum-toasty, topcoat-toasty]
     steps:
       - uses: actions/checkout@v5
         with:

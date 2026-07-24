@@ -37,15 +37,7 @@ pub struct TestBrowser {
 
 impl TestBrowser {
     pub async fn new() -> Self {
-        // Install chromium using the playwright driver bundled at compile time (no npm required)
-        if let (Some(node_exe), Some(cli_js)) = (
-            option_env!("PLAYWRIGHT_NODE_EXE"),
-            option_env!("PLAYWRIGHT_CLI_JS"),
-        ) {
-            let _ = std::process::Command::new(node_exe)
-                .args([cli_js, "install", "chromium"])
-                .status();
-        }
+        let _ = playwright_rs::install_browsers().await;
         let playwright = Playwright::launch().await.expect("Failed to launch Playwright");
         let browser = playwright
             .chromium()

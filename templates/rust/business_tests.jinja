@@ -358,7 +358,7 @@ async fn create_{{ entity_snake }}(i: &TestInfra) -> serde_json::Value {
     let suffix = next_suffix();
 {% for attr_name, attr_prop in entity.attributes | items -%}
 {% if macros.relation_has_fk(attr_prop) | trim == 'true' -%}
-{% set fk_target = attr_prop.target | replace("-","_") -%}
+{% set fk_target = attr_prop.target | replace("-","_") | snake_case -%}
 {% if fk_target != entity_snake -%}
 {% set back_ref = namespace(found=false) -%}
 {% for te_name, te_data in entities | items -%}{% if te_name | snake_case == fk_target -%}{% for ta_name, ta_prop in te_data.attributes | items -%}{% if macros.relation_has_fk(ta_prop) | trim == 'true' and ta_prop.target | replace("-","_") == entity_snake -%}{% set back_ref.found = true -%}{% endif -%}{% endfor -%}{% endif -%}{% endfor -%}
@@ -372,7 +372,7 @@ async fn create_{{ entity_snake }}(i: &TestInfra) -> serde_json::Value {
     let payload = json!({
 {% for attr_name, attr_prop in entity.attributes | items -%}
 {% if macros.relation_has_fk(attr_prop) | trim == 'true' -%}
-{% set fk_target = attr_prop.target | replace("-","_") -%}
+{% set fk_target = attr_prop.target | replace("-","_") | snake_case -%}
 {% if fk_target != entity_snake -%}
 {% set back_ref = namespace(found=false) -%}
 {% for te_name, te_data in entities | items -%}{% if te_name | snake_case == fk_target -%}{% for ta_name, ta_prop in te_data.attributes | items -%}{% if macros.relation_has_fk(ta_prop) | trim == 'true' and ta_prop.target | replace("-","_") == entity_snake -%}{% set back_ref.found = true -%}{% endif -%}{% endfor -%}{% endif -%}{% endfor -%}
@@ -908,62 +908,166 @@ mod contact_management_tests {
 }
 {% endif -%}
 
+{% if ns.state_names -%}
+// ============================================================================
+// § State-machine tests (for entities with state/status enum fields)
+// ============================================================================
+
+#[cfg(test)]
+mod state_machine_tests {
+    use super::*;
+
+{% for state_name in ns.state_names -%}
+{% set sev = entities[state_name] -%}
+{% set s_snake = state_name | snake_case -%}
+{% set s_plural = sev.info.pluralName | default(state_name | plural | snake_case) -%}
+{% set s_state_f = state_field_name(sev) | trim -%}
+{% set s_state_0 = initial_state(sev) | trim -%}
+{% set s_state_1 = next_state(sev) | trim -%}
+{% if s_state_f and s_state_0 and s_state_1 -%}
+    /// A `{{ state_name }}` in state `{{ s_state_0 }}` transitions to `{{ s_state_1 }}` on update.
+    #[test]
+    fn test_{{ s_snake }}_state_transition_from_{{ s_state_0 }}_to_{{ s_state_1 }}() {
+        let i = infra();
+        shared_runtime().block_on(async {
+            let doc = create_{{ s_snake }}(i).await;
+            let doc_id = id_of(&doc);
+
+            let initial = doc["{{ s_state_f }}"].as_str().unwrap_or("");
+            if !initial.is_empty() {
+                assert_eq!(initial, "{{ s_state_0 }}",
+                    "expected initial {{ s_state_f }} to be '{{ s_state_0 }}', got '{initial}'");
+            }
+
+            let suffix = next_suffix();
+{% for attr_name, attr_prop in sev.attributes | items -%}
+{% if macros.relation_has_fk(attr_prop) | trim == 'true' -%}
+            let {{ attr_name | snake_case }}_upd = doc["{{ attr_name | snake_case }}_id"]
+                .as_i64().or_else(|| doc["{{ attr_name | snake_case }}_id"].as_str().and_then(|s| s.parse().ok())).unwrap_or(0);
+{% endif -%}
+{% endfor -%}
+            let upd = json!({
+{% for attr_name, attr_prop in sev.attributes | items -%}
+{% if macros.relation_has_fk(attr_prop) | trim == 'true' -%}
+                "{{ attr_name | snake_case }}_id": {{ attr_name | snake_case }}_upd,
+{% endif -%}
+{% endfor -%}
+{% for attr_name, attr_prop in sev.attributes | items -%}
+{% if attr_prop.type != 'relation' and not attr_prop.readOnly -%}
+{% if (attr_name | lower) in ['state', 'status'] -%}
+                "{{ attr_name | snake_case }}": "{{ s_state_1 }}",
+{% else -%}
+{{ attr_value(attr_name, attr_prop, "st", "suffix") }}
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+            });
+            let resp = do_put(i, &format!("/api/{{ s_plural }}/{doc_id}"), &upd).await;
+            if resp.status_code().is_success() {
+                let updated: serde_json::Value = resp.json();
+                let new_state = updated["{{ s_state_f }}"].as_str().unwrap_or("");
+                if !new_state.is_empty() {
+                    assert_eq!(new_state, "{{ s_state_1 }}",
+                        "{{ s_state_f }} after update: expected '{{ s_state_1 }}', got '{new_state}'");
+                }
+            }
+            // 400/422 is acceptable when the server guards the transition
+        });
+    }
+
+    /// A newly created `{{ state_name }}` has state field set to `{{ s_state_0 }}`.
+    #[test]
+    fn test_{{ s_snake }}_created_with_initial_state() {
+        let i = infra();
+        shared_runtime().block_on(async {
+            let doc = create_{{ s_snake }}(i).await;
+            let state_val = doc["{{ s_state_f }}"].as_str().unwrap_or("");
+            if !state_val.is_empty() {
+                assert_eq!(state_val, "{{ s_state_0 }}",
+                    "new {{ state_name }} should have {{ s_state_f }}='{{ s_state_0 }}', got '{state_val}'");
+            }
+        });
+    }
+
+    /// The state field round-trips on get-by-id.
+    #[test]
+    fn test_{{ s_snake }}_state_field_round_trips() {
+        let i = infra();
+        shared_runtime().block_on(async {
+            let doc = create_{{ s_snake }}(i).await;
+            let doc_id = id_of(&doc);
+            let expected_state = doc["{{ s_state_f }}"].as_str().unwrap_or("{{ s_state_0 }}");
+
+            let resp = do_get(i, &format!("/api/{{ s_plural }}/{doc_id}")).await;
+            assert!(resp.status_code().is_success());
+            let fetched: serde_json::Value = resp.json();
+            let fetched_state = fetched["{{ s_state_f }}"].as_str().unwrap_or("");
+            assert_eq!(fetched_state, expected_state,
+                "{{ s_state_f }} round-trip mismatch: expected '{expected_state}', got '{fetched_state}'");
+        });
+    }
+{% endif -%}
+{% endfor -%}
+}
+{% endif -%}
+
 // ============================================================================
 // § Validation and pagination (always generated)
 // ============================================================================
+
+{% set first_gent = (entities | items | selectattr("1.attributes") | first) -%}
+{% if first_gent -%}
+{% set fgen = first_gent[0] -%}
+{% set fgev = first_gent[1] -%}
+{% set fg_snake = fgen | snake_case -%}
+{% set fg_plural = fgev.info.pluralName | default(fgen | plural | snake_case) -%}
 
 #[cfg(test)]
 mod business_validation_tests {
     use super::*;
 
-{% if ns.header_names -%}
-{% set first_header = ns.header_names[0] -%}
-{% set fhev         = entities[first_header] -%}
-{% set fh_snake     = first_header | snake_case -%}
-{% set fh_plural    = fhev.info.pluralName | default(first_header | plural | snake_case) -%}
-
-    /// Fetching a non-existent `{{ first_header }}` returns 404.
+    /// Fetching a non-existent `{{ fgen }}` returns 404.
     #[test]
-    fn test_get_nonexistent_{{ fh_snake }}_returns_404() {
+    fn test_get_nonexistent_{{ fg_snake }}_returns_404() {
         let i = infra();
         shared_runtime().block_on(async {
-            let resp = do_get(i, "/api/{{ fh_plural }}/999999999").await;
+            let resp = do_get(i, "/api/{{ fg_plural }}/999999999").await;
             assert_eq!(resp.status_code().as_u16(), 404,
-                "non-existent {{ first_header }} must return 404, got {}", resp.status_code());
+                "non-existent {{ fgen }} must return 404, got {}", resp.status_code());
         });
     }
 
-    /// Deleting a non-existent `{{ first_header }}` returns 404.
+    /// Deleting a non-existent `{{ fgen }}` returns 404.
     #[test]
-    fn test_delete_nonexistent_{{ fh_snake }}_returns_404() {
+    fn test_delete_nonexistent_{{ fg_snake }}_returns_404() {
         let i = infra();
         shared_runtime().block_on(async {
-            let resp = do_delete(i, "/api/{{ fh_plural }}/999999998").await;
+            let resp = do_delete(i, "/api/{{ fg_plural }}/999999998").await;
             assert_eq!(resp.status_code().as_u16(), 404,
-                "deleting non-existent {{ first_header }} must return 404, got {}", resp.status_code());
+                "deleting non-existent {{ fgen }} must return 404, got {}", resp.status_code());
         });
     }
 
-    /// The `{{ first_header }}` list returns a valid JSON array.
+    /// The `{{ fgen }}` list returns a valid JSON array.
     #[test]
-    fn test_{{ fh_snake }}_list_returns_json_array() {
+    fn test_{{ fg_snake }}_list_returns_json_array() {
         let i = infra();
         shared_runtime().block_on(async {
-            let resp = do_get(i, "/api/{{ fh_plural }}?page_size=0").await;
+            let resp = do_get(i, "/api/{{ fg_plural }}?page_size=0").await;
             assert!(resp.status_code().is_success(),
-                "GET /api/{{ fh_plural }} must return 200, got {}", resp.status_code());
+                "GET /api/{{ fg_plural }} must return 200, got {}", resp.status_code());
             let body: serde_json::Value = resp.json();
-            assert!(body.is_array(), "{{ first_header }} list must be a JSON array, got: {body}");
+            assert!(body.is_array(), "{{ fgen }} list must be a JSON array, got: {body}");
         });
     }
 
     /// The list endpoint respects `page_size` and includes a `Content-Range` header.
     #[test]
-    fn test_{{ fh_snake }}_list_pagination_content_range() {
+    fn test_{{ fg_snake }}_list_pagination_content_range() {
         let i = infra();
         shared_runtime().block_on(async {
-            let _ = create_{{ fh_snake }}(i).await; // ensure at least one record
-            let resp = do_get(i, "/api/{{ fh_plural }}?page=1&page_size=2").await;
+            let _ = create_{{ fg_snake }}(i).await;
+            let resp = do_get(i, "/api/{{ fg_plural }}?page=1&page_size=2").await;
             assert!(resp.status_code().is_success(), "paginated list failed");
 
             let items: Vec<serde_json::Value> = resp.json();
@@ -980,10 +1084,10 @@ mod business_validation_tests {
 
     /// The list endpoint includes an `Accept-Ranges: items` header.
     #[test]
-    fn test_{{ fh_snake }}_list_accept_ranges_header() {
+    fn test_{{ fg_snake }}_list_accept_ranges_header() {
         let i = infra();
         shared_runtime().block_on(async {
-            let resp = do_get(i, "/api/{{ fh_plural }}?page_size=10").await;
+            let resp = do_get(i, "/api/{{ fg_plural }}?page_size=10").await;
             assert!(resp.status_code().is_success());
             let ar = resp.headers()
                 .get("Accept-Ranges")
@@ -999,12 +1103,11 @@ mod business_validation_tests {
     fn test_list_endpoint_requires_auth() {
         let i = infra();
         shared_runtime().block_on(async {
-            let resp = i.server.get("/api/{{ fh_plural }}").await;
+            let resp = i.server.get("/api/{{ fg_plural }}").await;
             assert_eq!(resp.status_code().as_u16(), 401,
-                "unauthenticated GET /api/{{ fh_plural }} must return 401, got {}", resp.status_code());
+                "unauthenticated GET /api/{{ fg_plural }} must return 401, got {}", resp.status_code());
         });
     }
-{% endif -%}
 {% endif -%}
 
     /// The `/api/health` endpoint is always reachable without authentication.
@@ -1018,3 +1121,4 @@ mod business_validation_tests {
         });
     }
 }
+{% endif -%}

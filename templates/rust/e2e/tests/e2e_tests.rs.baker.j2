@@ -1108,12 +1108,16 @@ async fn test_shadcn_no_js_errors_on_load(
     let errors: std::sync::Arc<std::sync::Mutex<Vec<String>>> = Default::default();
     let errors_clone = errors.clone();
     page.on_console(move |msg| {
-        if msg.typ() == "error" {
-            if let Ok(mut errs) = errors_clone.lock() {
-                errs.push(msg.text().to_string());
+        let errors_clone = errors_clone.clone();
+        async move {
+            if msg.type_() == "error" {
+                if let Ok(mut errs) = errors_clone.lock() {
+                    errs.push(msg.text().to_string());
+                }
             }
+            Ok(())
         }
-    });
+    }).await.expect("on_console handler");
 
     page.goto(&base_url, None).await.expect("navigate");
     wait_for_selector(&page, "[data-sidebar], aside, nav, main", 15_000).await;
@@ -1179,7 +1183,7 @@ async fn test_shadcn_{{ entity_name | snake_case }}_list_route(
     wait_for_selector(&page, "table, [class*='RaList'], [class*='RaEmpty'], main", 15_000).await;
 
     // No crash — page rendered without redirecting to error
-    let url = page.url().expect("get current url");
+    let url = page.url();
     assert!(
         !url.contains("error") && !url.contains("500"),
         "{{ entity_display }} list route should not show error page, got: {}", url
@@ -1298,12 +1302,16 @@ async fn test_shadcn_grpc_data_provider_no_transport_error(
     let errors: std::sync::Arc<std::sync::Mutex<Vec<String>>> = Default::default();
     let errors_clone = errors.clone();
     page.on_console(move |msg| {
-        if msg.typ() == "error" {
-            if let Ok(mut errs) = errors_clone.lock() {
-                errs.push(msg.text().to_string());
+        let errors_clone = errors_clone.clone();
+        async move {
+            if msg.type_() == "error" {
+                if let Ok(mut errs) = errors_clone.lock() {
+                    errs.push(msg.text().to_string());
+                }
             }
+            Ok(())
         }
-    });
+    }).await.expect("on_console handler");
 
     page.goto(&base_url, None).await.expect("navigate");
     wait_for_selector(&page, "[data-sidebar], aside, nav, main", 15_000).await;
