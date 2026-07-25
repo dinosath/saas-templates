@@ -692,17 +692,35 @@ mod {{ entity_snake }}_tests {
 {% for attr_name, attr_prop in entity.attributes | items -%}
 {% if not attr_prop.readOnly and attr_prop.type != 'relation' and macros.relation_has_fk(attr_prop)|trim != 'true' -%}
 {% if attr_prop.type == 'string' -%}
+{% if attr_prop.format == 'email' -%}
+                    "{{ attr_name | snake_case }}": format!("batch_upd_a_{}@example.com", suffix),
+{% elif attr_prop.format == 'date-time' or attr_prop.format == 'date' -%}
+                    "{{ attr_name | snake_case }}": "2024-01-15T00:00:00",
+{% elif attr_prop.maxLength is defined and attr_prop.maxLength <= 10 -%}
+                    "{{ attr_name | snake_case }}": format!("{:.*}", {{ attr_prop.maxLength }}, format!("a{}", suffix)),
+{% else -%}
                     "{{ attr_name | snake_case }}": format!("Batch Upd A {}", suffix),
+{% endif -%}
+{% elif attr_prop.type == 'integer' -%}
+                    "{{ attr_name | snake_case }}": {{ attr_prop.default | default(1) }},
+{% elif attr_prop.type == 'number' or attr_prop.type == 'decimal' or attr_prop.type == 'float' -%}
+                    "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
 {% elif attr_prop.type == 'boolean' -%}
                     "{{ attr_name | snake_case }}": true,
+{% elif attr_prop.type == 'date' -%}
+                    "{{ attr_name | snake_case }}": "2024-01-15",
+{% elif attr_prop.type == 'datetime' or attr_prop.type == 'timestamp' -%}
+                    "{{ attr_name | snake_case }}": "2024-01-15T00:00:00",
+{% elif attr_prop.type == 'time' -%}
+                    "{{ attr_name | snake_case }}": "12:00:00",
+{% elif attr_prop.type == 'text' -%}
+                    "{{ attr_name | snake_case }}": format!("Batch Upd A content {}", suffix),
 {% elif attr_prop.type == 'enumeration' or attr_prop.enum -%}
 {% if attr_prop.enum | length > 1 -%}
                     "{{ attr_name | snake_case }}": "{{ attr_prop.enum[1] }}",
 {% else -%}
                     "{{ attr_name | snake_case }}": "{{ attr_prop.enum[0] | default('default') }}",
 {% endif -%}
-{% elif attr_prop.type == 'text' -%}
-                    "{{ attr_name | snake_case }}": format!("Batch Upd A content {}", suffix),
 {% else -%}
                     "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0) }},
 {% endif -%}
@@ -726,13 +744,35 @@ mod {{ entity_snake }}_tests {
 {% for attr_name, attr_prop in entity.attributes | items -%}
 {% if not attr_prop.readOnly and attr_prop.type != 'relation' and macros.relation_has_fk(attr_prop)|trim != 'true' -%}
 {% if attr_prop.type == 'string' -%}
+{% if attr_prop.format == 'email' -%}
+                    "{{ attr_name | snake_case }}": format!("batch_upd_b_{}@example.com", suffix),
+{% elif attr_prop.format == 'date-time' or attr_prop.format == 'date' -%}
+                    "{{ attr_name | snake_case }}": "2024-01-15T00:00:00",
+{% elif attr_prop.maxLength is defined and attr_prop.maxLength <= 10 -%}
+                    "{{ attr_name | snake_case }}": format!("{:.*}", {{ attr_prop.maxLength }}, format!("b{}", suffix)),
+{% else -%}
                     "{{ attr_name | snake_case }}": format!("Batch Upd B {}", suffix),
+{% endif -%}
+{% elif attr_prop.type == 'integer' -%}
+                    "{{ attr_name | snake_case }}": {{ attr_prop.default | default(1) }},
+{% elif attr_prop.type == 'number' or attr_prop.type == 'decimal' or attr_prop.type == 'float' -%}
+                    "{{ attr_name | snake_case }}": {{ attr_prop.default | default(0.0) }},
 {% elif attr_prop.type == 'boolean' -%}
                     "{{ attr_name | snake_case }}": false,
-{% elif attr_prop.type == 'enumeration' or attr_prop.enum -%}
-                    "{{ attr_name | snake_case }}": "{{ attr_prop.enum[0] | default('default') }}",
+{% elif attr_prop.type == 'date' -%}
+                    "{{ attr_name | snake_case }}": "2024-01-15",
+{% elif attr_prop.type == 'datetime' or attr_prop.type == 'timestamp' -%}
+                    "{{ attr_name | snake_case }}": "2024-01-15T00:00:00",
+{% elif attr_prop.type == 'time' -%}
+                    "{{ attr_name | snake_case }}": "12:00:00",
 {% elif attr_prop.type == 'text' -%}
                     "{{ attr_name | snake_case }}": format!("Batch Upd B content {}", suffix),
+{% elif attr_prop.type == 'enumeration' or attr_prop.enum -%}
+{% if attr_prop.enum | length > 1 -%}
+                    "{{ attr_name | snake_case }}": "{{ attr_prop.enum[0] | default('default') }}",
+{% else -%}
+                    "{{ attr_name | snake_case }}": "{{ attr_prop.enum[0] | default('default') }}",
+{% endif -%}
 {% else -%}
                     "{{ attr_name | snake_case }}": {{ attr_prop.default | default(1) }},
 {% endif -%}
