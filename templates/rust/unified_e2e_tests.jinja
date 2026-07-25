@@ -678,7 +678,19 @@ mod {{ entity_snake }}_tests {
                 {
                     "id": id_a,
 {% for attr_name, attr_prop in entity.attributes | items -%}
-{% if not attr_prop.readOnly and attr_prop.type != 'relation' and not macros.relation_has_fk(attr_prop) -%}
+{% if macros.relation_has_fk(attr_prop)|trim == 'true' -%}
+{% set fk_target = attr_prop.target | replace("-","_") | snake_case -%}
+{% if fk_target != entity_snake -%}
+{% set back_ref = namespace(found=false) -%}
+{% for te_name, te_data in entities | items -%}{% if te_name | snake_case == fk_target -%}{% for ta_name, ta_prop in te_data.attributes | items -%}{% if macros.relation_has_fk(ta_prop)|trim == 'true' and ta_prop.target | replace("-","_") == entity_snake -%}{% set back_ref.found = true -%}{% endif -%}{% endfor -%}{% endif -%}{% endfor -%}
+{% if not back_ref.found -%}
+                    "{{ attr_name | snake_case }}_id": a["{{ attr_name | snake_case }}_id"],
+{% endif -%}
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+{% for attr_name, attr_prop in entity.attributes | items -%}
+{% if not attr_prop.readOnly and attr_prop.type != 'relation' and macros.relation_has_fk(attr_prop)|trim != 'true' -%}
 {% if attr_prop.type == 'string' -%}
                     "{{ attr_name | snake_case }}": format!("Batch Upd A {}", suffix),
 {% elif attr_prop.type == 'boolean' -%}
@@ -700,7 +712,19 @@ mod {{ entity_snake }}_tests {
                 {
                     "id": id_b,
 {% for attr_name, attr_prop in entity.attributes | items -%}
-{% if not attr_prop.readOnly and attr_prop.type != 'relation' and not macros.relation_has_fk(attr_prop) -%}
+{% if macros.relation_has_fk(attr_prop)|trim == 'true' -%}
+{% set fk_target = attr_prop.target | replace("-","_") | snake_case -%}
+{% if fk_target != entity_snake -%}
+{% set back_ref = namespace(found=false) -%}
+{% for te_name, te_data in entities | items -%}{% if te_name | snake_case == fk_target -%}{% for ta_name, ta_prop in te_data.attributes | items -%}{% if macros.relation_has_fk(ta_prop)|trim == 'true' and ta_prop.target | replace("-","_") == entity_snake -%}{% set back_ref.found = true -%}{% endif -%}{% endfor -%}{% endif -%}{% endfor -%}
+{% if not back_ref.found -%}
+                    "{{ attr_name | snake_case }}_id": b["{{ attr_name | snake_case }}_id"],
+{% endif -%}
+{% endif -%}
+{% endif -%}
+{% endfor -%}
+{% for attr_name, attr_prop in entity.attributes | items -%}
+{% if not attr_prop.readOnly and attr_prop.type != 'relation' and macros.relation_has_fk(attr_prop)|trim != 'true' -%}
 {% if attr_prop.type == 'string' -%}
                     "{{ attr_name | snake_case }}": format!("Batch Upd B {}", suffix),
 {% elif attr_prop.type == 'boolean' -%}

@@ -55,8 +55,8 @@ diesel_migrations = { version = "2", features = ["postgres"] }
 {% endif -%}
 {% endif -%}
 {% if orm == 'toasty' and database=='postgres' -%}
-toasty = { version = "0.8", features = ["postgres"] }
-toasty-core = { version = "0.8", features = ["postgres"] }
+toasty = { version = "0.8", features = ["postgresql"] }
+toasty-core = { version = "0.8", features = ["postgresql"] }
 {% endif -%}
 {{ 'static-serve = "0.6"' if frontend != 'none' }}
 {% if row_level_security -%}
