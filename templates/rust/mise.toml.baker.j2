@@ -141,6 +141,7 @@ run = "diesel migration redo"
 [tasks.post-generate]
 description = "Post generation tasks"
 run = '''
+rustup component add rustfmt
 cargo fmt 
 cargo fix --allow-dirty --allow-no-vcs
 cargo update
