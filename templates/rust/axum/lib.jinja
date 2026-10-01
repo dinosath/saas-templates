@@ -1,7 +1,11 @@
 {% import "macros.jinja" as macros -%}
 {% import "rust/types.jinja" as rust_types -%}
+{% set axum_grpc = 'grpc' in protocols and database != 'none' and orm == 'seaorm' -%}
 {% if 'rest' in protocols -%}
 mod controllers;
+{% endif -%}
+{% if axum_grpc -%}
+pub mod grpc;
 {% endif -%}
 {% if database != 'none' -%}
 pub mod models {
@@ -9,7 +13,7 @@ pub mod models {
 }
 pub mod app_state;
 {% endif -%}
-{% if (authentication == 'jwt' and 'rest' in protocols) or row_level_security or (add_migrations and orm == 'seaorm') -%}
+{% if (authentication == 'jwt' and 'rest' in protocols) or row_level_security -%}
 pub mod services {
     automod::dir!(pub "src/services");
 }
@@ -49,6 +53,10 @@ pub fn build_router({% if database != 'none' %}state: app_state::AppState{% endi
     use axum::http::header;
     use tower_http::set_header::SetResponseHeaderLayer;
 
+    {% if axum_grpc -%}
+    let grpc_router = grpc::router(&state);
+
+    {% endif -%}
     {% if 'rest' in protocols -%}
     let mut router = axum::Router::new()
         .merge(controllers::routes())
@@ -68,7 +76,9 @@ pub fn build_router({% if database != 'none' %}state: app_state::AppState{% endi
         {% endif -%}
         ;
     {% endif -%}
-
+    {% if axum_grpc -%}
+    router = router.merge(grpc_router);
+    {% endif %}
     // ─── Security headers (always applied) ──────────────────────────────
     router = router
         .layer(SetResponseHeaderLayer::overriding(

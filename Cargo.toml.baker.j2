@@ -26,7 +26,7 @@ exclude = ["e2e"]
 {% if orm == "seaorm" -%}
 [workspace.dependencies]
 automod = "1.0"
-{{ 'sea-orm-migration = { version = "2.0.0", features = ["runtime-tokio-rustls", "sqlx-postgres"], default-features = false }' if add_migrations }}
+{{ 'sea-orm-migration = { version = "2.0", features = ["runtime-tokio-rustls", "sqlx-postgres"], default-features = false }' if add_migrations }}
 tokio = { version = "1", features = ["full"] }
 {% endif -%}
 
@@ -44,7 +44,7 @@ serde = "1.0"
 serde_json = "1.0"
 serde_with = "3.16"
 {% if orm == 'seaorm' and database=='postgres' -%}
-sea-orm = { version = "2.0.0", features = ["sqlx-postgres","runtime-tokio-rustls","macros","with-chrono","with-json","with-uuid","schema-sync","entity-registry","rbac"], default-features = false }
+sea-orm = { version = "2.0", features = ["sqlx-postgres","runtime-tokio-rustls","macros","with-chrono","with-json","with-uuid","schema-sync","entity-registry","rbac"], default-features = false }
 {% endif -%}
 {% if orm == 'diesel' and database=='postgres' -%}
 diesel = { version = "2", features = ["postgres", "r2d2", "chrono", "64-column-tables"] }
@@ -61,13 +61,18 @@ toasty-core = { version = "0.8", features = ["postgresql"] }
 {{ 'static-serve = "0.6"' if frontend != 'none' }}
 {% if row_level_security -%}
 {% endif -%}
-{% if 'rest' in protocols -%}
+{% if 'rest' in protocols or backend == 'axum' -%}
 tower-http = { version = "0.6", features = ["set-header"{% if security_level | default('standard') == 'hardened' %}, "limit", "cors"{% endif %}] }
 {% endif -%}
 {% if database != 'none' -%}
-validator = { version = "0.20", features = ["derive"] }
+validator = { version = "0.21", features = ["derive"] }
 {% endif -%}
-{% if 'grpc' in protocols -%}
+{% if 'grpc' in protocols and backend == 'axum' -%}
+tonic = "0.14"
+tonic-prost = "0.14"
+prost = "0.14"
+{{ 'tonic-web = "0.14"' if frontend != 'none' and frontend_protocol == 'grpc-web' }}
+{% elif 'grpc' in protocols -%}
 grpc = "0.9"
 grpc-protobuf = "0.9"
 {% endif %}
@@ -80,13 +85,18 @@ webgates-repositories = { git = "https://github.com/emirror-de/webgates", branch
 {% endif -%}
 
 [dev-dependencies]
-axum-test = "20.0"
+axum-test = "21.1"
 testcontainers = "0.27"
 testcontainers-modules = { version = "0.15", features = ["postgres"] }
 reqwest = { version = "0.13", features = ["json", "cookies"], default-features = false }
-serial_test = "3"
+serial_test = "4"
 
 {% if 'grpc' in protocols -%}
 [build-dependencies]
+{% if backend == 'axum' -%}
+tonic-prost-build = "0.14"
+protox = "0.9"
+{% else -%}
 grpc-protobuf-build = "0.9"
+{% endif -%}
 {% endif -%}

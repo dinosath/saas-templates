@@ -30,7 +30,7 @@ questions:
   project_edition:
     type: str
     help: Please enter the edition of the project
-    default: "2021"
+    default: "2024"
 
   backend:
     type: str
@@ -43,7 +43,7 @@ questions:
   orm:
     type: str
     help: What ORM do you want to use?
-    default: diesel
+    default: seaorm
     choices:
       - diesel
       - seaorm
@@ -52,7 +52,7 @@ questions:
   authentication:
     type: str
     help: What authentication method do you want to use?
-    default: jwt
+    default: none
     choices:
       - jwt
       - oidc
@@ -148,18 +148,6 @@ questions:
     help: Do you want to use hardened images for Docker?
     default: true
   
-  upx:
-    type: bool
-    help: Do you want to use UPX to compress the binary in the Docker image?
-    default: true
-  
-  include_in_dockerfile:
-    type: str
-    help: "Files to include in the Docker image. Comma-separated list; each entry is 'source' (copies to the same path) or 'source:target' (e.g. config or config/app.toml:/app/config/app.toml)."
-    default: "config"
-    validation:
-      condition: "include_in_dockerfile|regex('^$|^[^,\\s]+(:[^,\\s]+)?(,[^,\\s]+(:[^,\\s]+)?)*$')"
-
   ci_cd:
     type: str
     help: What scripts for CI/CD do you want to generate?

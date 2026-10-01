@@ -35,8 +35,9 @@ springrs-template/
 │   ├── lib.rs.baker.j2
 │   ├── controllers/             # Conditional: only rendered when 'rest' in protocols
 │   ├── models/                  # Conditional: only rendered when database=='postgres'
+│   ├── grpc/                    # Conditional: axum + seaorm + 'grpc' in protocols (tonic services)
 │   └── services/
-│       ├── seaorm_migration_plugin.rs.baker.j2
+│       ├── seaorm_migration_plugin.rs.baker.j2  # Conditional: spring-rs only
 │       └── tenant_plugin.rs.baker.j2  # Conditional: only rendered when row_level_security
 │
 ├── tests/                       # Integration test templates

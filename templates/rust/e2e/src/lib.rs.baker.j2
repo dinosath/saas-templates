@@ -109,7 +109,7 @@ impl TestEnvironment {
         println!("Starting app container...");
         let app_image = GenericImage::new("{{project_name}}", "latest")
             .with_exposed_port(8080.tcp())
-{% if 'grpc' in protocols %}
+{% if 'grpc' in protocols and backend != 'axum' %}
             .with_exposed_port(9090.tcp())
 {% endif %}
             .with_env_var("DATABASE_URL", &database_url_for_app)
@@ -121,7 +121,7 @@ impl TestEnvironment {
         let app_port = app_container.get_host_port_ipv4(8080).await?;
         let base_url = format!("http://{}:{}", app_host, app_port);
 {% if 'grpc' in protocols %}
-        let grpc_port = app_container.get_host_port_ipv4(9090).await?;
+        let grpc_port = app_container.get_host_port_ipv4({{ 8080 if backend == 'axum' else 9090 }}).await?;
         let grpc_addr = format!("http://{}:{}", app_host, grpc_port);
         println!("gRPC service available at: {}", grpc_addr);
 {% endif %}

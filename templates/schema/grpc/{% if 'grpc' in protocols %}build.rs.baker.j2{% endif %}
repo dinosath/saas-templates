@@ -1,3 +1,14 @@
+{% if backend == 'axum' -%}
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("cargo:rerun-if-changed=proto");
+    // protox compiles the proto in pure Rust, so no system protoc is required.
+    let descriptors = protox::compile(["{{ project_name | snake_case }}.proto"], ["proto"])?;
+    tonic_prost_build::configure()
+        .build_client(false)
+        .compile_fds(descriptors)?;
+    Ok(())
+}
+{% else -%}
 fn main() {
     if std::env::var_os("GRPC_RUST_REGENERATE_PROTO").is_some() {
         let manifest_dir = std::path::PathBuf::from(
@@ -12,4 +23,5 @@ fn main() {
             .unwrap();
     }
 }
+{% endif -%}
 

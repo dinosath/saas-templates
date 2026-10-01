@@ -1,0 +1,66 @@
+{% import "rust/grpc.jinja" as grpc -%}
+syntax = "proto3";
+
+package {{ project_name | snake_case }};
+
+message Empty {}
+{% for entity_name, entity in entities | items | selectattr("1.attributes") %}
+{% set message = entity_name | pascal_case -%}
+{% set message_plural = entity_name | plural | pascal_case -%}
+
+message {{ message }} {
+    string id = 1;
+    string created_at = 2;
+    string updated_at = 3;
+    {% for name, property in entity.attributes | items -%}
+    {% set kind = grpc.field_kind(name, property) | trim -%}
+    {% if kind == 'skip' or property.writeOnly %}{% continue %}{% endif -%}
+    {{ 'optional ' if not property.required }}{{ grpc.proto_type(kind) }} {{ name | snake_case }} = {{ loop.index + 3 }};
+    {% endfor %}
+}
+
+message Create{{ message }}Request {
+    {% for name, property in entity.attributes | items -%}
+    {% set kind = grpc.field_kind(name, property) | trim -%}
+    {% if kind == 'skip' or property.readOnly %}{% continue %}{% endif -%}
+    {{ 'optional ' if not property.required }}{{ grpc.proto_type(kind) }} {{ name | snake_case }} = {{ loop.index }};
+    {% endfor %}
+}
+
+message Update{{ message }}Request {
+    string id = 1;
+    reserved 2, 3;
+    {% for name, property in entity.attributes | items -%}
+    {% set kind = grpc.field_kind(name, property) | trim -%}
+    {% if kind == 'skip' or property.readOnly %}{% continue %}{% endif -%}
+    {{ 'optional ' if not property.required }}{{ grpc.proto_type(kind) }} {{ name | snake_case }} = {{ loop.index + 3 }};
+    {% endfor %}
+}
+
+message Get{{ message }}Request {
+  string id = 1;
+}
+
+message Delete{{ message }}Request {
+  string id = 1;
+}
+
+message List{{ message_plural }}Request {
+  int32 page_size = 1;
+  // Offset of the first item, as returned in next_page_token; empty for the first page.
+  string page_token = 2;
+}
+
+message List{{ message_plural }}Response {
+  repeated {{ message }} {{ message_plural | snake_case }} = 1;
+  string next_page_token = 2;
+}
+
+service {{ message }}Service {
+  rpc Create(Create{{ message }}Request) returns ({{ message }});
+  rpc Get(Get{{ message }}Request) returns ({{ message }});
+  rpc Update(Update{{ message }}Request) returns ({{ message }});
+  rpc Delete(Delete{{ message }}Request) returns (Empty);
+  rpc List(List{{ message_plural }}Request) returns (List{{ message_plural }}Response);
+}
+{% endfor %}

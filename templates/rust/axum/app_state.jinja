@@ -13,6 +13,14 @@ impl AppState {
         let db = sea_orm::Database::connect(&database_url)
             .await
             .expect("failed to connect to database");
+        {% if add_migrations -%}
+        {
+            use migration::MigratorTrait;
+            migration::Migrator::up(&db, None)
+                .await
+                .expect("seaorm migrations failed");
+        }
+        {% endif -%}
         Self { db }
     }
 }

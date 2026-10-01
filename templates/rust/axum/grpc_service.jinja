@@ -1,0 +1,155 @@
+{% import "macros.jinja" as macros -%}
+{% import "rust/types.jinja" as rust_types -%}
+{% import "rust/grpc.jinja" as grpc -%}
+{% set pascal = entity_name | pascal_case -%}
+{% set plural_pascal = entity_name | plural | pascal_case -%}
+{% set plural_snake = entity_name | plural | snake_case -%}
+{% set server_mod = (entity_name | snake_case) ~ '_service_server' -%}
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel, QueryOrder, QuerySelect, Set};
+use tonic::{Request, Response, Status};
+use validator::Validate;
+
+use super::proto;
+use crate::models::{{ rust_types.identifier(entity_name) }}::{Column, Entity, {{ pascal }}Create, {{ pascal }}Response, {{ pascal }}Update};
+
+pub struct {{ pascal }}GrpcService {
+    db: DatabaseConnection,
+}
+
+pub const ROUTE: &str = "/{{ project_name | snake_case }}.{{ pascal }}Service/{*method}";
+
+pub fn server(db: DatabaseConnection) -> proto::{{ server_mod }}::{{ pascal }}ServiceServer<{{ pascal }}GrpcService> {
+    proto::{{ server_mod }}::{{ pascal }}ServiceServer::new({{ pascal }}GrpcService { db })
+}
+
+fn to_proto(model: {{ pascal }}Response) -> proto::{{ pascal }} {
+    proto::{{ pascal }} {
+        id: model.id.to_string(),
+        created_at: super::format_datetime(&model.created_at),
+        updated_at: super::format_datetime(&model.last_updated),
+        {% for name, property in entity.attributes | items -%}
+        {% if grpc.field_kind(name, property) | trim == 'skip' or property.writeOnly %}{% continue %}{% endif -%}
+        {{ grpc.assign_to_proto(name, property, 'model') }}
+        {% endfor %}
+    }
+}
+
+fn create_from_proto(req: proto::Create{{ pascal }}Request) -> Result<{{ pascal }}Create, Status> {
+    Ok({{ pascal }}Create {
+        {% for name, property in entity.attributes | items -%}
+        {% if grpc.field_kind(name, property) | trim == 'skip' or property.readOnly %}{% continue %}{% endif -%}
+        {{ grpc.assign_from_proto(name, property, 'req') }}
+        {% endfor -%}
+        {% if macros.entity_has_rls(entity, row_level_security) | trim == 'true' -%}
+        ..Default::default()
+        {% endif -%}
+    })
+}
+
+fn update_from_proto(req: proto::Update{{ pascal }}Request) -> Result<{{ pascal }}Update, Status> {
+    Ok({{ pascal }}Update {
+        {% for name, property in entity.attributes | items -%}
+        {% if grpc.field_kind(name, property) | trim == 'skip' or property.readOnly %}{% continue %}{% endif -%}
+        {{ grpc.assign_from_proto(name, property, 'req') }}
+        {% endfor -%}
+    })
+}
+
+fn not_found(id: &str) -> Status {
+    Status::not_found(format!("{{ entity_name | snake_case }} {id} not found"))
+}
+
+#[tonic::async_trait]
+impl proto::{{ server_mod }}::{{ pascal }}Service for {{ pascal }}GrpcService {
+    async fn create(
+        &self,
+        request: Request<proto::Create{{ pascal }}Request>,
+    ) -> Result<Response<proto::{{ pascal }}>, Status> {
+        let input = create_from_proto(request.into_inner())?;
+        input.validate().map_err(super::validation_error)?;
+        let model = input
+            .into_active_model()
+            .insert(&self.db)
+            .await
+            .map_err(super::db_error)?;
+        Ok(Response::new(to_proto(model.into())))
+    }
+
+    async fn get(
+        &self,
+        request: Request<proto::Get{{ pascal }}Request>,
+    ) -> Result<Response<proto::{{ pascal }}>, Status> {
+        let raw_id = request.into_inner().id;
+        let id = super::parse_id("id", &raw_id)?;
+        let model = Entity::find_by_id(id)
+            .one(&self.db)
+            .await
+            .map_err(super::db_error)?
+            .ok_or_else(|| not_found(&raw_id))?;
+        Ok(Response::new(to_proto(model.into())))
+    }
+
+    async fn update(
+        &self,
+        request: Request<proto::Update{{ pascal }}Request>,
+    ) -> Result<Response<proto::{{ pascal }}>, Status> {
+        let req = request.into_inner();
+        let raw_id = req.id.clone();
+        let id = super::parse_id("id", &raw_id)?;
+        let input = update_from_proto(req)?;
+        input.validate().map_err(super::validation_error)?;
+        Entity::find_by_id(id)
+            .one(&self.db)
+            .await
+            .map_err(super::db_error)?
+            .ok_or_else(|| not_found(&raw_id))?;
+        let mut active_model = input.into_active_model();
+        active_model.id = Set(id);
+        let model = active_model
+            .update(&self.db)
+            .await
+            .map_err(super::db_error)?;
+        Ok(Response::new(to_proto(model.into())))
+    }
+
+    async fn delete(
+        &self,
+        request: Request<proto::Delete{{ pascal }}Request>,
+    ) -> Result<Response<proto::Empty>, Status> {
+        let raw_id = request.into_inner().id;
+        let id = super::parse_id("id", &raw_id)?;
+        let result = Entity::delete_by_id(id)
+            .exec(&self.db)
+            .await
+            .map_err(super::db_error)?;
+        if result.rows_affected == 0 {
+            return Err(not_found(&raw_id));
+        }
+        Ok(Response::new(proto::Empty {}))
+    }
+
+    async fn list(
+        &self,
+        request: Request<proto::List{{ plural_pascal }}Request>,
+    ) -> Result<Response<proto::List{{ plural_pascal }}Response>, Status> {
+        let req = request.into_inner();
+        let offset = super::page_offset(&req.page_token)?;
+        let limit = super::page_size(req.page_size);
+        let models = Entity::find()
+            .order_by_asc(Column::Id)
+            .offset(offset)
+            .limit(limit)
+            .all(&self.db)
+            .await
+            .map_err(super::db_error)?;
+        let next_page_token = if models.len() as u64 == limit {
+            (offset + limit).to_string()
+        } else {
+            String::new()
+        };
+        Ok(Response::new(proto::List{{ plural_pascal }}Response {
+            {{ plural_snake }}: models.into_iter().map(|m| to_proto(m.into())).collect(),
+            next_page_token,
+        }))
+    }
+}

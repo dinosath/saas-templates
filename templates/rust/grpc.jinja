@@ -1,0 +1,85 @@
+{% import "macros.jinja" as macros -%}
+{% import "rust/types.jinja" as rust_types -%}
+
+{#- Classifies an attribute for proto/Rust conversion; 'skip' means not exposed over gRPC. -#}
+{%- macro field_kind(name, property) -%}{% filter trim %}
+{%- if property.type == 'relation' -%}
+    {%- if macros.relation_is_many_to_one(property) == 'true' or macros.relation_is_one_to_one(property) == 'true' -%}rel{%- else -%}skip{%- endif -%}
+{%- elif property.type == 'enumeration' -%}enum
+{%- else -%}
+    {%- set primitive = rust_types.get_rust_primitive(name, property) | trim -%}
+    {%- if primitive == 'Uuid' -%}uuid
+    {%- elif primitive == 'DateTime' -%}datetime
+    {%- elif primitive == 'Date' -%}date
+    {%- elif primitive == 'TimeTime' -%}time
+    {%- elif primitive == 'bool' -%}bool
+    {%- elif primitive in ['i16', 'i32', 'i64'] -%}int
+    {%- elif primitive == 'f32' -%}f32
+    {%- elif primitive == 'f64' -%}f64
+    {%- else -%}string
+    {%- endif -%}
+{%- endif -%}
+{% endfilter %}{%- endmacro -%}
+
+{%- macro proto_type(kind) -%}{% filter trim %}
+{%- if kind == 'bool' -%}bool
+{%- elif kind == 'int' -%}int64
+{%- elif kind in ['f32', 'f64'] -%}double
+{%- else -%}string
+{%- endif -%}
+{% endfilter %}{%- endmacro -%}
+
+{%- macro is_fallible(kind) -%}{{ 'true' if kind in ['rel', 'enum', 'uuid', 'datetime', 'date', 'time', 'int'] else 'false' }}{%- endmacro -%}
+
+{#- Proto value `expr` -> Rust value; yields a Result<_, Status> when is_fallible(kind). -#}
+{%- macro from_proto(kind, name, expr) -%}{% filter trim %}
+{%- if kind == 'rel' -%}super::parse_id("{{ name }}", &{{ expr }})
+{%- elif kind == 'enum' -%}super::parse_enum("{{ name }}", {{ expr }})
+{%- elif kind in ['uuid', 'date', 'time'] -%}super::parse_str("{{ name }}", &{{ expr }})
+{%- elif kind == 'datetime' -%}super::parse_datetime("{{ name }}", &{{ expr }})
+{%- elif kind == 'int' -%}super::parse_int("{{ name }}", {{ expr }})
+{%- elif kind == 'f32' -%}{{ expr }} as f32
+{%- else -%}{{ expr }}
+{%- endif -%}
+{% endfilter %}{%- endmacro -%}
+
+{#- Rust value `expr` -> proto value. -#}
+{%- macro to_proto(kind, expr) -%}{% filter trim %}
+{%- if kind in ['rel', 'uuid', 'date', 'time'] -%}{{ expr }}.to_string()
+{%- elif kind == 'enum' -%}super::enum_to_string(&{{ expr }})
+{%- elif kind == 'datetime' -%}super::format_datetime(&{{ expr }})
+{%- elif kind == 'int' -%}i64::from({{ expr }})
+{%- elif kind == 'f32' -%}f64::from({{ expr }})
+{%- else -%}{{ expr }}
+{%- endif -%}
+{% endfilter %}{%- endmacro -%}
+
+{#- Assigns proto field `src.field` to a Rust struct field, honouring optionality. -#}
+{%- macro assign_from_proto(name, property, src) -%}{% filter trim %}
+{%- set kind = field_kind(name, property) | trim -%}
+{%- set field = rust_types.rust_var(name, false) | trim -%}
+{%- set target = (name | snake_case ~ '_id') if kind == 'rel' else field -%}
+{%- if property.required -%}
+{{ target }}: {{ from_proto(kind, name, src ~ '.' ~ field) }}{{ '?' if is_fallible(kind) == 'true' }},
+{%- elif is_fallible(kind) == 'true' -%}
+{{ target }}: {{ src }}.{{ field }}.map(|v| {{ from_proto(kind, name, 'v') }}).transpose()?,
+{%- elif kind == 'f32' -%}
+{{ target }}: {{ src }}.{{ field }}.map(|v| v as f32),
+{%- else -%}
+{{ target }}: {{ src }}.{{ field }},
+{%- endif -%}
+{% endfilter %}{%- endmacro -%}
+
+{#- Assigns Rust struct field `src.field` to a proto field, honouring optionality. -#}
+{%- macro assign_to_proto(name, property, src) -%}{% filter trim %}
+{%- set kind = field_kind(name, property) | trim -%}
+{%- set field = rust_types.rust_var(name, false) | trim -%}
+{%- set source = src ~ '.' ~ ((name | snake_case ~ '_id') if kind == 'rel' else field) -%}
+{%- if property.required -%}
+{{ field }}: {{ to_proto(kind, source) }},
+{%- elif kind in ['string', 'bool', 'f64'] -%}
+{{ field }}: {{ source }},
+{%- else -%}
+{{ field }}: {{ source }}.map(|x| {{ to_proto(kind, 'x') }}),
+{%- endif -%}
+{% endfilter %}{%- endmacro -%}
