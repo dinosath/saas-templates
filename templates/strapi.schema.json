@@ -347,6 +347,7 @@
                                         "time",
                                         "enumeration",
                                         "json",
+                                        "yaml",
                                         "uid",
                                         "media",
                                         "relation",
@@ -364,6 +365,10 @@
                                     "type": "boolean"
                                 },
                                 "default": {},
+                                "jsonSchema": {
+                                    "type": "object",
+                                    "description": "Optional JSON Schema for the structured value of a json or yaml attribute."
+                                },
                                 "minLength": {
                                     "type": "integer",
                                     "minimum": 0
@@ -482,6 +487,23 @@
                                 }
                             },
                             "allOf": [
+                                {
+                                    "if": {
+                                        "required": [
+                                            "jsonSchema"
+                                        ]
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "type": {
+                                                "enum": [
+                                                    "json",
+                                                    "yaml"
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
                                 {
                                     "if": {
                                         "properties": {
