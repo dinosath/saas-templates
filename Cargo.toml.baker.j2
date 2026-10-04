@@ -47,7 +47,7 @@ serde_with = "3.16"
 sea-orm = { version = "2.0", features = ["sqlx-postgres","runtime-tokio-rustls","macros","with-chrono","with-json","with-uuid","schema-sync","entity-registry","rbac"], default-features = false }
 {% endif -%}
 {% if orm == 'diesel' and database=='postgres' -%}
-diesel = { version = "2", features = ["postgres", "r2d2", "chrono", "64-column-tables"] }
+diesel = { version = "2", features = ["postgres", "r2d2", "chrono", "serde_json", "64-column-tables"] }
 pq-sys = { version = "0.7", features = ["bundled"] }
 diesel-derive-enum = { version = "2", features = ["postgres"] }
 {% if add_migrations -%}
@@ -76,6 +76,11 @@ prost = "0.14"
 grpc = "0.9"
 grpc-protobuf = "0.9"
 {% endif %}
+{% if 'connect' in protocols -%}
+connectrpc = { version = "0.9.1", default-features = false, features = ["json", "axum"] }
+buffa = { version = "0.9", features = ["json"] }
+tower = { version = "0.5", features = ["util"] }
+{% endif -%}
 {{ 'tokio.workspace = true' if orm == "seaorm" else 'tokio = { version = "1", features = ["full"] }' }}
 mimalloc = { version = "0.1.50", features = ["secure"] }
 {% if authentication == 'jwt' and 'rest' in protocols -%}
@@ -91,12 +96,20 @@ testcontainers-modules = { version = "0.15", features = ["postgres"] }
 reqwest = { version = "0.13", features = ["json", "cookies"], default-features = false }
 serial_test = "4"
 
-{% if 'grpc' in protocols -%}
+{% if 'grpc' in protocols or 'connect' in protocols -%}
 [build-dependencies]
+{% if 'connect' in protocols -%}
+connectrpc-build = "0.9.0"
+prost = "0.14"
+{% endif -%}
+{% if backend == 'axum' or 'connect' in protocols -%}
+protox = "0.9"
+{% endif -%}
+{% if 'grpc' in protocols -%}
 {% if backend == 'axum' -%}
 tonic-prost-build = "0.14"
-protox = "0.9"
 {% else -%}
 grpc-protobuf-build = "0.9"
+{% endif -%}
 {% endif -%}
 {% endif -%}

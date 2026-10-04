@@ -6,6 +6,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tonic_prost_build::configure()
         .build_client(false)
         .compile_fds(descriptors)?;
+    {% if 'connect' in protocols -%}
+    {% include "rust/axum/connect_build.jinja" %}
+    {% endif -%}
     Ok(())
 }
 {% else -%}

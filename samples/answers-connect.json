@@ -1,0 +1,33 @@
+{
+    "project_name": "connect_app",
+    "project_author": "Template tests",
+    "backend": "axum",
+    "orm": "seaorm",
+    "id_type": "integer",
+    "authentication": "none",
+    "database": "postgres",
+    "add_migrations": true,
+    "row_level_security": false,
+    "security_level": "standard",
+    "features": [],
+    "protocols": ["rest", "connect"],
+    "frontend": "entity-editor",
+    "frontend_protocol": "connect",
+    "ci_cd": [],
+    "entities": {
+        "Document": {
+            "kind": "collectionType",
+            "collectionName": "documents",
+            "info": {
+                "displayName": "Document",
+                "singularName": "document",
+                "pluralName": "documents"
+            },
+            "attributes": {
+                "name": {"type": "string", "required": true},
+                "configuration": {"type": "json", "jsonSchema": {"type": "object"}},
+                "manifest": {"type": "yaml", "jsonSchema": {"type": "object"}}
+            }
+        }
+    }
+}

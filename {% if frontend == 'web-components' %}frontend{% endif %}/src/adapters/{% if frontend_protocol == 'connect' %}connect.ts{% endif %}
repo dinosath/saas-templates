@@ -1,0 +1,26 @@
+import { createClient, ConnectError } from '@connectrpc/connect';
+import { createConnectTransport } from '@connectrpc/connect-web';
+import { EntityService } from '../gen/entities_pb';
+import { EntityClientError, type EntityTransport } from '../core/client';
+
+export function createConnectEntityTransport(options: { baseUrl: string; headers?: () => HeadersInit }): EntityTransport {
+  const client = createClient(EntityService, createConnectTransport({ baseUrl: options.baseUrl, useBinaryFormat: false }));
+  return {
+    async execute(request, call) {
+      try {
+        const response = await client.execute({
+          entity: request.entity,
+          operation: request.operation,
+          id: request.id === undefined ? '' : String(request.id),
+          payloadJson: request.payload === undefined ? '' : JSON.stringify(request.payload),
+          page: request.page ?? 1,
+          pageSize: request.pageSize ?? 25,
+        }, { signal: call?.signal, headers: options.headers?.() });
+        return { body: JSON.parse(response.bodyJson), total: Number(response.total) };
+      } catch (error) {
+        if (error instanceof ConnectError) throw new EntityClientError(error.rawMessage, String(error.code));
+        throw error;
+      }
+    },
+  };
+}

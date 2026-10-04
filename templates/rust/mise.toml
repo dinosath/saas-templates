@@ -76,7 +76,13 @@ run = [
     { task = "rest-rls" },
     { task = "axum-toasty" },
     { task = "topcoat-toasty" },
+    { task = "connect" },
 ]
+
+  [tasks.connect]
+  description = "Generate and test the Connect entity editor sample"
+  env.ANSWER = "connect"
+  run = [{ task = "generate" }, { task = "e2e-frontend" }]
 
 [tasks.clippy]
 description = "Run clippy on a generated variant"

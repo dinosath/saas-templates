@@ -1,0 +1,11 @@
+println!("cargo:rerun-if-changed=proto/entities.proto");
+use prost::Message;
+let descriptors = protox::compile(["entities.proto"], ["proto"])?;
+let descriptor_path = std::path::PathBuf::from(std::env::var("OUT_DIR")?)
+    .join("connect_descriptor.bin");
+std::fs::write(&descriptor_path, descriptors.encode_to_vec())?;
+connectrpc_build::Config::new()
+    .descriptor_set(descriptor_path)
+    .files(&["entities.proto"])
+    .include_file("_connectrpc.rs")
+    .compile()?;

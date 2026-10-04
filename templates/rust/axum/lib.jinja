@@ -7,6 +7,15 @@ mod controllers;
 {% if axum_grpc -%}
 pub mod grpc;
 {% endif -%}
+{% if 'connect' in protocols -%}
+{% if 'rest' not in protocols or orm == 'toasty' or id_type != 'integer' -%}
+compile_error!("Connect entity support requires REST, SeaORM or Diesel, and integer IDs.");
+{% endif -%}
+pub mod connect;
+{% endif -%}
+{% if frontend == 'entity-editor' and frontend_protocol == 'connect' and 'connect' not in protocols -%}
+compile_error!("The Connect entity editor requires the connect protocol.");
+{% endif -%}
 {% if database != 'none' -%}
 pub mod models {
     automod::dir!(pub "src/models");
@@ -57,6 +66,9 @@ pub fn build_router({% if database != 'none' %}state: app_state::AppState{% endi
     let grpc_router = grpc::router(&state);
 
     {% endif -%}
+    {% if 'connect' in protocols -%}
+    let connect_service = connect::service(controllers::routes().with_state(state.clone()));
+    {% endif -%}
     {% if 'rest' in protocols -%}
     let mut router = axum::Router::new()
         .merge(controllers::routes())
@@ -79,6 +91,9 @@ pub fn build_router({% if database != 'none' %}state: app_state::AppState{% endi
     {% if axum_grpc -%}
     router = router.merge(grpc_router);
     {% endif %}
+    {% if 'connect' in protocols -%}
+    router = router.route_service("/entities.v1.EntityService/Execute", connect_service.into_service::<axum::body::Body>());
+    {% endif -%}
     // ─── Security headers (always applied) ──────────────────────────────
     router = router
         .layer(SetResponseHeaderLayer::overriding(
@@ -123,7 +138,7 @@ pub fn build_router({% if database != 'none' %}state: app_state::AppState{% endi
             axum::http::Method::DELETE,
             axum::http::Method::OPTIONS,
         ])
-        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, header::HeaderName::from_static("x-tenant-id")])
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, header::HeaderName::from_static("x-tenant-id"){% if 'connect' in protocols %}, header::HeaderName::from_static("connect-protocol-version"), header::HeaderName::from_static("connect-timeout-ms"){% endif %}])
         .max_age(std::time::Duration::from_secs(3600));
     router = router.layer(cors);
 {% endif %}

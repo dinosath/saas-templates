@@ -1,0 +1,16 @@
+import type { EntityDefinition } from './core/schema';
+
+export const entities: EntityDefinition[] = [
+{% for entity_name, entity in entities | items | selectattr("1.attributes") %}
+  {
+    name: {{ entity_name | tojson }},
+    label: {{ entity.info.displayName | tojson }},
+    path: "/api/{{ entity.info.pluralName | kebab_case }}",
+    attributes: {
+{% for name, field in entity.attributes | items %}
+      {{ name | snake_case | tojson }}: {{ field | tojson }},
+{% endfor %}
+    },
+  },
+{% endfor %}
+];

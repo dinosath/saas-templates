@@ -118,6 +118,7 @@ questions:
     choices:
       - rest
       - grpc
+      - connect
 
   frontend:
     type: str
@@ -127,6 +128,7 @@ questions:
       - shadcn-admin-kit
       - leptos
       - topcoat
+      - web-components
       - none
 
   frontend_protocol:
@@ -137,6 +139,7 @@ questions:
     choices:
       - rest
       - grpc-web
+      - connect
 
   automod:
     type: bool

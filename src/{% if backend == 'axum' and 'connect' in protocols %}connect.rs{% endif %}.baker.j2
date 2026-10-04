@@ -1,0 +1,161 @@
+use axum::{body::{Body, to_bytes}, http::{Request, Method, StatusCode}, Router};
+use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use std::sync::Arc;
+use tower::ServiceExt;
+
+pub mod proto {
+    connectrpc::include_generated!();
+}
+
+use proto::entities::v1::{EntityRequest, EntityResponse, EntityService};
+
+struct EntityAdapter {
+    routes: Router,
+}
+
+impl EntityService for EntityAdapter {
+    async fn execute<'a>(
+        &'a self,
+        context: RequestContext,
+        request: ServiceRequest<'_, EntityRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<EntityResponse> + Send + use<'a>> {
+        let path = match request.entity {
+            {% for entity_name, entity in entities | items | selectattr("1.attributes") -%}
+            {{ entity_name | tojson }} => "/api/{{ entity.info.pluralName | kebab_case }}",
+            {% endfor -%}
+            _ => return Err(ConnectError::not_found("Unknown entity")),
+        };
+        let (method, uri) = match request.operation {
+            "list" => (Method::GET, format!("{path}?page={}&page_size={}", request.page.max(1), if request.page_size == 0 { 25 } else { request.page_size.min(100) })),
+            "create" => (Method::POST, path.to_owned()),
+            "read" | "update" | "delete" => {
+                let id = request.id.parse::<i32>()
+                    .map_err(|_| ConnectError::invalid_argument("Invalid integer ID"))?;
+                let method = match request.operation {
+                    "read" => Method::GET,
+                    "update" => Method::PUT,
+                    _ => Method::DELETE,
+                };
+                (method, format!("{path}/{id}"))
+            }
+            _ => return Err(ConnectError::invalid_argument("Unknown operation")),
+        };
+        if matches!(method, Method::POST | Method::PUT) {
+            let payload: serde_json::Value = serde_json::from_str(request.payload_json)
+                .map_err(|_| ConnectError::invalid_argument("Invalid JSON payload"))?;
+            if !payload.is_object() {
+                return Err(ConnectError::invalid_argument("Payload must be an object"));
+            }
+        }
+        let mut forwarded = Request::builder()
+            .method(method)
+            .uri(uri)
+            .header("content-type", "application/json")
+            .body(Body::from(request.payload_json.to_owned()))?;
+        for name in ["authorization", "cookie", "x-tenant-id"] {
+            for value in context.headers().get_all(name) {
+                forwarded.headers_mut().append(name, value.clone());
+            }
+        }
+        let response = self.routes.clone().oneshot(forwarded).await
+            .map_err(|_| ConnectError::internal("Entity dispatch failed"))?;
+        let status = response.status();
+        let total = response.headers().get("content-range")
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.rsplit('/').next())
+            .and_then(|value| value.parse::<u64>().ok())
+            .unwrap_or(0);
+        let bytes = to_bytes(response.into_body(), 2 * 1024 * 1024).await
+            .map_err(|_| ConnectError::resource_exhausted("Entity response exceeds limit"))?;
+        if !status.is_success() {
+            let code = match status {
+                StatusCode::BAD_REQUEST | StatusCode::UNPROCESSABLE_ENTITY => ErrorCode::InvalidArgument,
+                StatusCode::UNAUTHORIZED => ErrorCode::Unauthenticated,
+                StatusCode::FORBIDDEN => ErrorCode::PermissionDenied,
+                StatusCode::NOT_FOUND => ErrorCode::NotFound,
+                StatusCode::CONFLICT => ErrorCode::AlreadyExists,
+                StatusCode::TOO_MANY_REQUESTS => ErrorCode::ResourceExhausted,
+                _ => ErrorCode::Internal,
+            };
+            let message = if status.is_server_error() {
+                "Entity operation failed".to_owned()
+            } else {
+                String::from_utf8_lossy(&bytes).into_owned()
+            };
+            return Err(ConnectError::new(code, message));
+        }
+        Response::ok(EntityResponse {
+            body_json: if bytes.is_empty() { "null".into() } else { String::from_utf8(bytes.to_vec()).map_err(|_| ConnectError::internal("Invalid entity response"))? },
+            total,
+            ..Default::default()
+        })
+    }
+}
+
+pub fn service(routes: Router) -> Router {
+    let service = connectrpc::Router::new()
+        .add_service(Arc::new(EntityAdapter { routes }))
+        .into_axum_service();
+    Router::new().fallback_service(service)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{routing::get, Json};
+
+    {% set first = entities | items | selectattr("1.attributes") | first -%}
+    {% if first -%}
+    async fn rpc(payload: serde_json::Value, routes: Router) -> (StatusCode, serde_json::Value) {
+        let request = Request::builder()
+            .method("POST")
+            .uri("/entities.v1.EntityService/Execute")
+            .header("content-type", "application/json")
+            .header("connect-protocol-version", "1")
+            .header("authorization", "Bearer test")
+            .header("x-tenant-id", "tenant-a")
+            .body(Body::from(payload.to_string())).unwrap();
+        let response = service(routes).oneshot(request).await.unwrap();
+        let status = response.status();
+        let bytes = to_bytes(response.into_body(), 2 * 1024 * 1024).await.unwrap();
+        (status, serde_json::from_slice(&bytes).unwrap())
+    }
+
+    #[tokio::test]
+    async fn connect_forwards_headers_and_pagination() {
+        let routes = Router::new().route("/api/{{ first.1.info.pluralName | kebab_case }}", get(|request: Request<Body>| async move {
+            assert_eq!(request.headers()["authorization"], "Bearer test");
+            assert_eq!(request.headers()["x-tenant-id"], "tenant-a");
+            assert_eq!(request.uri().query(), Some("page=2&page_size=100"));
+            ([("content-range", "items 100-100/101")], Json(serde_json::json!([{"id": 1}])))
+        }));
+        let (status, body) = rpc(serde_json::json!({"entity": {{ first.0 | tojson }}, "operation": "list", "page": 2, "pageSize": 500}), routes).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["total"], "101");
+        assert_eq!(serde_json::from_str::<serde_json::Value>(body["bodyJson"].as_str().unwrap()).unwrap(), serde_json::json!([{"id": 1}]));
+    }
+
+    #[tokio::test]
+    async fn connect_rejects_unknown_entities_operations_and_invalid_payloads() {
+        for payload in [
+            serde_json::json!({"entity": "unknown", "operation": "list"}),
+            serde_json::json!({"entity": {{ first.0 | tojson }}, "operation": "unknown"}),
+            serde_json::json!({"entity": {{ first.0 | tojson }}, "operation": "read", "id": "../health"}),
+            serde_json::json!({"entity": {{ first.0 | tojson }}, "operation": "create", "payloadJson": "[]"}),
+        ] {
+            let (status, _) = rpc(payload, Router::new()).await;
+            assert!(status.is_client_error());
+        }
+    }
+
+    #[tokio::test]
+    async fn connect_maps_auth_errors_and_hides_internal_errors() {
+        for (status, code) in [(StatusCode::UNAUTHORIZED, "unauthenticated"), (StatusCode::FORBIDDEN, "permission_denied"), (StatusCode::INTERNAL_SERVER_ERROR, "internal")] {
+            let routes = Router::new().route("/api/{{ first.1.info.pluralName | kebab_case }}", get(move || async move { (status, "private database details") }));
+            let (_, body) = rpc(serde_json::json!({"entity": {{ first.0 | tojson }}, "operation": "list"}), routes).await;
+            assert_eq!(body["code"], code);
+            if status.is_server_error() { assert!(!body.to_string().contains("private database details")); }
+        }
+    }
+    {% endif -%}
+}

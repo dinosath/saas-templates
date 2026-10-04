@@ -1,0 +1,27 @@
+{
+  "name": "{{ project_name | kebab_case }}-entity-editor",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "proto:gen": "buf generate --template buf.gen.yaml",
+    "build": "{% if frontend_protocol == 'connect' %}npm run proto:gen && {% endif %}tsc --noEmit && vite build",
+    "dev": "{% if frontend_protocol == 'connect' %}npm run proto:gen && {% endif %}vite --host 127.0.0.1",
+    "test": "{% if frontend_protocol == 'connect' %}npm run proto:gen && {% endif %}vitest run"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "yaml": "^2.8.1"{% if frontend_protocol == 'connect' %},
+    "@bufbuild/protobuf": "^2.9.0",
+    "@connectrpc/connect": "^2.1.0",
+    "@connectrpc/connect-web": "^2.1.0"{% endif %}
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.0"{% if frontend_protocol == 'connect' %},
+    "@bufbuild/buf": "^1.57.0",
+    "@bufbuild/protoc-gen-es": "^2.9.0"{% endif %}
+  }
+}

@@ -49,6 +49,8 @@
         {%- endif -%}
     {%- elif property.type == 'boolean' -%}
         bool
+    {%- elif property.type == 'json' -%}
+        serde_json::Value
     {%- elif property.type == 'integer' -%}
         {%- if property.minimum and property.minimum >= 0 -%}
             {%- if property.maximum and property.maximum <= 32767 -%}

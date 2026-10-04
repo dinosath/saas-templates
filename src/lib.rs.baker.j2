@@ -1,3 +1,9 @@
+{% if 'connect' in protocols and backend != 'axum' -%}
+compile_error!("Connect support currently requires the axum backend.");
+{% endif -%}
+{% if frontend == 'entity-editor' and ('rest' not in protocols or frontend_protocol == 'grpc-web') -%}
+compile_error!("The entity editor requires REST controllers and uses rest or connect transport.");
+{% endif -%}
 {% if backend == 'spring-rs' -%}
 {% include "rust/springrs/lib.jinja" %}
 {%- elif backend == 'axum' -%}

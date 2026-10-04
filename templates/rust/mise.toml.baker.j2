@@ -73,6 +73,14 @@ description = "Build frontend"
 dir = "frontend"
 run = "pnpm run build"
 depends = [{% if frontend_protocol == 'grpc-web' %}"frontend-proto-gen"{% else %}"frontend-install"{% endif %}]
+{% if frontend == 'entity-editor' %}
+
+[tasks.frontend-test]
+description = "Test the vendor-neutral entity client and schema helpers"
+dir = "frontend"
+run = "pnpm test"
+depends = ["frontend-install"]
+{% endif %}
 {% endif %}
 
 [tasks.build]
@@ -162,6 +170,7 @@ run = [
 description = "Build frontend and test the project"
 run = [
     {{ '{ task = "frontend-build" },' if frontend != "none" }}
+    {{ '{ task = "frontend-test" },' if frontend == "entity-editor" }}
     { task = "post-generate" },
     { task = "cargo-chef" },
     { tasks = ["test","audit"] },

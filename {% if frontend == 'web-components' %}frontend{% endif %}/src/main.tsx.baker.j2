@@ -1,0 +1,19 @@
+import { createEntityClient } from './core/client';
+{% if frontend_protocol == 'connect' %}
+import { createConnectEntityTransport } from './adapters/connect';
+{% else %}
+import { createRestTransport } from './adapters/rest';
+{% endif %}
+import { entities } from './entities';
+import { defineEntityEditor, type EntityEditorElement } from './web-component';
+
+const client = createEntityClient({% if frontend_protocol == 'connect' %}createConnectEntityTransport{% else %}createRestTransport{% endif %}({
+  baseUrl: window.location.origin,
+  {% if frontend_protocol != 'connect' %}entities,{% endif %}
+}));
+
+defineEntityEditor();
+const editor = document.createElement('saas-entity-editor') as EntityEditorElement;
+editor.client = client;
+editor.entities = entities;
+document.getElementById('root')!.replaceWith(editor);
