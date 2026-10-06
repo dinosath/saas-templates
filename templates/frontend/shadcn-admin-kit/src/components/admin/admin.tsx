@@ -1,15 +1,14 @@
-import {
-  CoreAdminUI,
-  type CoreAdminUIProps,
-  CoreAdminContext,
-  type CoreAdminContextProps,
-  type CoreAdminProps,
-  localStorageStore,
+import type {
+  CoreAdminUIProps,
+  CoreAdminContextProps,
+  CoreAdminProps,
 } from "ra-core";
+import { CoreAdminUI, CoreAdminContext, localStorageStore } from "ra-core";
 import { i18nProvider as defaultI18nProvider } from "@/lib/i18nProvider";
 import { Layout } from "@/components/admin/layout";
 import { LoginPage } from "@/components/admin/login-page";
 import { NotFound } from "@/components/admin/not-found";
+import { AccessDenied } from "@/components/admin/access-denied";
 import { Ready } from "@/components/admin/ready";
 import { ThemeProvider } from "@/components/admin/theme-provider";
 import { AuthCallback } from "@/components/admin/authentication";
@@ -57,10 +56,6 @@ const AdminUI = (props: CoreAdminUIProps) => {
   return (
     <ThemeProvider>
       <CoreAdminUI
-        layout={Layout}
-        loginPage={LoginPage}
-        ready={Ready}
-        authCallbackPage={AuthCallback}
         disableTelemetry // Disable telemetry in CoreAdminUI to avoid double logging
         {...rest}
       />
@@ -101,7 +96,7 @@ const AdminUI = (props: CoreAdminUIProps) => {
  */
 export const Admin = (props: CoreAdminProps) => {
   const {
-    accessDenied,
+    accessDenied = AccessDenied,
     authCallbackPage = AuthCallback,
     authenticationError,
     authProvider,
@@ -119,6 +114,7 @@ export const Admin = (props: CoreAdminProps) => {
     queryClient,
     ready = Ready,
     requireAuth,
+    routerProvider,
     store = defaultStore,
     title = "Shadcn Admin",
   } = props;
@@ -129,6 +125,7 @@ export const Admin = (props: CoreAdminProps) => {
       dataProvider={dataProvider}
       i18nProvider={i18nProvider}
       queryClient={queryClient}
+      routerProvider={routerProvider}
       store={store}
     >
       <AdminUI

@@ -14,7 +14,7 @@ import {
   useTranslate,
 } from "ra-core";
 import type { ComponentProps, ReactElement } from "react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useId } from "react";
 
 import { FormError, FormField, FormLabel } from "@/components/admin/form";
 import { InputHelperText } from "@/components/admin/input-helper-text";
@@ -144,6 +144,7 @@ export const SelectInput = (props: SelectInputProps) => {
     createValue,
     createHintValue,
   });
+  const labelId = useId();
   const { id, field, isRequired } = useInput({
     alwaysOn,
     defaultValue,
@@ -212,7 +213,7 @@ export const SelectInput = (props: SelectInputProps) => {
         className={cn("w-full min-w-20", className)}
       >
         {label !== "" && label !== false && (
-          <FormLabel>
+          <FormLabel id={labelId}>
             <FieldTitle
               label={label}
               source={source}
@@ -251,7 +252,7 @@ export const SelectInput = (props: SelectInputProps) => {
         {...rest}
       >
         {label !== "" && label !== false && (
-          <FormLabel>
+          <FormLabel id={labelId}>
             <FieldTitle
               label={label}
               source={source}
@@ -262,10 +263,8 @@ export const SelectInput = (props: SelectInputProps) => {
         )}
         <div className="relative">
           <Select
-            //FIXME https://github.com/radix-ui/primitives/issues/3135
-            // Setting a key based on the value fixes an issue where onValueChange
-            // was called with an empty string when the controlled value was changed.
-            // See: https://github.com/radix-ui/primitives/issues/3135#issuecomment-2916908248
+            // Re-mounting the select when the controlled value changes avoids a stale
+            // internal state edge case where onValueChange can briefly receive "".
             key={`select:${field.value?.toString() ?? emptyValue}`}
             value={field.value?.toString() || emptyValue}
             onValueChange={handleChangeWithCreateSupport}
@@ -273,8 +272,20 @@ export const SelectInput = (props: SelectInputProps) => {
             <SelectTrigger
               className={cn("w-full transition-all hover:bg-accent")}
               disabled={field.disabled}
+              aria-labelledby={labelId}
             >
-              <SelectValue placeholder={renderEmptyItemOption()} />
+              <SelectValue placeholder={renderEmptyItemOption()}>
+                {(value: string | null) => {
+                  if (!value || value === emptyValue) {
+                    return renderEmptyItemOption();
+                  }
+                  const choice = finalChoices?.find(
+                    (choice) =>
+                      choice && getChoiceValue(choice)?.toString() === value,
+                  );
+                  return choice ? renderMenuItemOption(choice) : value;
+                }}
+              </SelectValue>
 
               {field.value && field.value !== emptyValue ? (
                 <div

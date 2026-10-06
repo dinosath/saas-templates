@@ -1,11 +1,7 @@
 import type { HTMLAttributes } from "react";
 import get from "lodash/get.js";
-import {
-  type ExtractRecordPaths,
-  type HintedString,
-  useFieldValue,
-  useTranslate,
-} from "ra-core";
+import type { ExtractRecordPaths, HintedString } from "ra-core";
+import { useFieldValue, useTranslate } from "ra-core";
 import { cn } from "@/lib/utils";
 
 import type { FieldProps } from "@/lib/field.type";

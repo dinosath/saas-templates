@@ -13,15 +13,15 @@
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "yaml": "^2.8.1"{% if frontend_protocol == 'connect' %},
-    "@bufbuild/protobuf": "^2.9.0",
-    "@connectrpc/connect": "^2.1.0",
-    "@connectrpc/connect-web": "^2.1.0"{% endif %}
+    "@bufbuild/protobuf": "^2.16.0",
+    "@connectrpc/connect": "^2.2.0",
+    "@connectrpc/connect-web": "^2.2.0"{% endif %}
   },
   "devDependencies": {
     "typescript": "^5.9.0",
     "vite": "^7.1.0",
     "vitest": "^3.2.0"{% if frontend_protocol == 'connect' %},
-    "@bufbuild/buf": "^1.57.0",
-    "@bufbuild/protoc-gen-es": "^2.9.0"{% endif %}
+    "@bufbuild/buf": "^1.73.0",
+    "@bufbuild/protoc-gen-es": "^2.16.0"{% endif %}
   }
 }

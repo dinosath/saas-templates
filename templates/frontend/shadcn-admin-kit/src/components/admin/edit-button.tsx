@@ -3,12 +3,15 @@ import { buttonVariants } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import type { RaRecord } from "ra-core";
 import {
+  LinkBase,
   useCreatePath,
+  useGetRecordRepresentation,
+  useGetResourceLabel,
   useRecordContext,
   useResourceContext,
-  Translate,
+  useResourceTranslation,
 } from "ra-core";
-import { Link } from "react-router";
+import { cn } from "@/lib/utils";
 
 export type EditButtonProps = {
   record?: RaRecord;
@@ -38,25 +41,41 @@ export type EditButtonProps = {
  * );
  */
 export const EditButton = (props: EditButtonProps) => {
+  const { label: labelProp } = props;
   const resource = useResourceContext(props);
   const record = useRecordContext(props);
   const createPath = useCreatePath();
+  const getResourceLabel = useGetResourceLabel();
+  const getRecordRepresentation = useGetRecordRepresentation(resource);
+  const recordRepresentationValue = getRecordRepresentation(record);
+  const recordRepresentation =
+    typeof recordRepresentationValue === "string"
+      ? recordRepresentationValue
+      : recordRepresentationValue?.toString();
   const link = createPath({
     resource,
     type: "edit",
     id: record?.id,
   });
+  const label = useResourceTranslation({
+    resourceI18nKey: resource ? `resources.${resource}.action.edit` : undefined,
+    baseI18nKey: "ra.action.edit",
+    options: {
+      name: resource ? getResourceLabel(resource, 1) : undefined,
+      recordRepresentation,
+    },
+    userText: labelProp,
+  });
   return (
-    <Link
-      className={buttonVariants({ variant: "outline" })}
+    <LinkBase
+      className={cn(buttonVariants({ variant: "outline" }))}
       to={link}
       onClick={stopPropagation}
+      aria-label={typeof label === "string" ? label : undefined}
     >
       <Pencil />
-      <Translate i18nKey={props.label ?? "ra.action.edit"}>
-        {props.label ?? "Edit"}
-      </Translate>
-    </Link>
+      {label}
+    </LinkBase>
   );
 };
 
