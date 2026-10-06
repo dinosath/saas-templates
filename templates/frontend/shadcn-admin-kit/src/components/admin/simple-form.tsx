@@ -33,7 +33,7 @@ export const SimpleForm = ({
   ...rest
 }: SimpleFormProps) => (
   <Form
-    className={cn(`flex flex-col gap-4 w-full max-w-lg`, className)}
+    className={cn(`flex flex-col gap-4 w-full`, className)}
     {...rest}
   >
     {children}

@@ -115,30 +115,16 @@ mise run build-and-test
 # Run end-to-end tests (requires Docker)
 mise run e2e
 
-# Run the service locally
-cargo run
+# Run locally with a temporary PostgreSQL Testcontainer{% if frontend != 'none' %} and the frontend{% endif %}
+mise run dev
 ```
 
-{% if frontend != 'none' %}
-### Frontend tasks
-
-```bash
-# Start frontend dev server
-mise run frontend-dev
-
-# Production build
-mise run frontend-build
-```
-
-{% endif %}
 {% if database == 'postgres' %}
 ### Database tasks
 
-Start the full local stack (app + PostgreSQL) with Docker Compose:
-
-```bash
-docker compose --profile runtime up
-```
+Dev mode uses Docker to start a temporary PostgreSQL Testcontainer and removes
+it when the dev task exits. To run only the frontend against an already-running
+backend, use `mise run frontend-dev`.
 
 {% endif %}
 ### Re-generating the project

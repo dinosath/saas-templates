@@ -83,6 +83,14 @@ depends = ["frontend-install"]
 {% endif %}
 {% endif %}
 
+[tasks.backend-dev]
+description = "Run backend with a temporary PostgreSQL Testcontainer"
+run = "cargo run -p dev-runner"
+
+[tasks.dev]
+description = "Run the backend and frontend with a temporary PostgreSQL Testcontainer"
+run = "cargo run -p dev-runner{{ ' -- --with-frontend' if frontend != 'none' }}"
+
 [tasks.build]
 description = "Build the project"
 run = "cargo build --release"

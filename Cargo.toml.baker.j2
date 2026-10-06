@@ -17,7 +17,7 @@ overflow-checks = false
 
 [workspace]
 exclude = ["e2e"]
-{% set members = [] %}
+{% set members = ['"dev-runner"'] %}
 {% if add_migrations and orm == "seaorm" %}{% set members = members + ['"migration"'] %}{% endif %}
 {% if frontend == 'topcoat' %}{% set members = members + ['"topcoat"'] %}{% endif %}
 {{ 'members = [' + members | join(', ') + ']' if members | length > 0 }}
